@@ -1,0 +1,88 @@
+name: Test Starter
+ 
+on:
+  workflow_dispatch:
+    inputs:
+      system_name:
+        description: Physical test PC / runner label
+        required: true
+        type: string
+      test_location:
+        required: true
+        type: string
+      test_library:
+        required: true
+        type: string
+      test_parameters:
+        required: false
+        type: string
+      assigned_id:
+        required: false
+        type: string
+      save_location:
+        required: true
+        type: string
+      save_screenshots_and_videos:
+        required: false
+        default: false
+        type: boolean
+      loops:
+        required: true
+        default: '1'
+        type: string
+ 
+concurrency:
+  group: test-pc-${{ inputs.system_name }}
+  cancel-in-progress: false
+ 
+jobs:
+  run-tests:
+    name: ${{ inputs.system_name }} - ${{ inputs.test_library }}
+    runs-on: [self-hosted, Windows, '${{ inputs.system_name }}']
+ 
+    env:
+      SYSTEM_NAME: ${{ inputs.system_name }}
+      TEST_LOCATION: ${{ inputs.test_location }}
+      TEST_LIBRARY: ${{ inputs.test_library }}
+      TEST_PARAMETERS: ${{ inputs.test_parameters }}
+      ASSIGNED_ID: ${{ inputs.assigned_id }}
+      SAVE_LOCATION: ${{ inputs.save_location }}
+      SAVE_MEDIA: ${{ inputs.save_screenshots_and_videos }}
+      LOOPS: ${{ inputs.loops }}
+      DATA_PATH: D:\Jenkins
+      SERVER_DATA_PATH: ${{ vars.SERVER_DATA_PATH }}
+ 
+    steps:
+      - uses: actions/checkout@v4
+ 
+      - name: Prepare physical test PC
+        shell: powershell
+        run: |
+          $ErrorActionPreference = 'Stop'
+ 
+          if ($env:RUNNER_NAME -ne $env:SYSTEM_NAME) {
+            throw "Expected runner '$env:SYSTEM_NAME'; got '$env:RUNNER_NAME'."
+          }
+          if ([string]::IsNullOrWhiteSpace($env:SERVER_DATA_PATH)) {
+            throw 'Repository variable SERVER_DATA_PATH is not set.'
+          }
+ 
+          $tools = Join-Path $env:DATA_PATH 'Tools'
+          New-Item -ItemType Directory -Path $tools -Force | Out-Null
+ 
+          foreach ($name in 'RunAsCurrentUser', 'RunInCurrentUser') {
+            $process = Get-Process -Name $name -ErrorAction SilentlyContinue
+            if ($process) {
+              $process | Stop-Process -Force -ErrorAction Stop
+            }
+ 
+            $source = Join-Path $env:SERVER_DATA_PATH "Tools\$name.exe"
+            $destination = Join-Path $tools "$name.exe"
+            Copy-Item -LiteralPath $source -Destination $destination -Force
+          }
+ 
+      - name: Execute migrated test stages
+        shell: powershell
+        run: |
+          & "$env:GITHUB_WORKSPACE\scripts\Invoke-SystemTests.ps1"
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
