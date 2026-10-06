@@ -1,0 +1,21 @@
+name: Test Kratu Runner
+
+on:
+  workflow_dispatch:
+
+jobs:
+  test-runner:
+    runs-on: [self-hosted, Windows, X64]
+
+    steps:
+      - name: Check runner machine
+        shell: powershell
+        run: |
+          Write-Host "===== RUNNER TEST ====="
+          Write-Host "Runner Name: $env:RUNNER_NAME"
+          Write-Host "Computer Name: $env:COMPUTERNAME"
+          Write-Host "User:"
+          whoami
+          Write-Host "Current directory:"
+          Get-Location
+          Write-Host "Runner test SUCCESS"
