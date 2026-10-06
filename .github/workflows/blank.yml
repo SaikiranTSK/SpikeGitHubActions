@@ -1,31 +1,384 @@
-name: Test Kratu Runner
-
+name: MainlineTeamTests
+run-name: ${{ inputs.SystemName }} - ${{ inputs.JobName }}
+ 
 on:
   workflow_dispatch:
-
+    inputs:
+      SystemName:
+        description: Physical test PC
+        required: true
+        type: choice
+        options:
+          - Technopolis6
+          - Technopolis5
+          - BV3
+          - AntonPieck
+          - AntonMauve-VTM
+          - AlanTuring
+          - AlbertCuyp
+          - CarelFabritius
+          - Corneille
+          - DickBruna
+          - DevOps2
+          - Escher
+          - FransHals
+          - GerardVanHonthorst
+          - IsaacIsraels
+          - JanToorop
+          - JeroenBosch
+          - JohannesVermeer
+          - JudithLeyster
+          - Pagode
+          - PaulusPotter
+          - PietMondriaan
+          - Rotterdam
+          - Technopolis4
+          - Technopolis7
+          - WillemDeKooning
+          - JozefIsraels
+          - AntonMauve-STM
+          - JacobVanCampen
+          - MariaVanOosterwijck
+          - VTP01_BLR
+          - JacobVanRuisdael
+          - JanSteen
+          - CornelisSpringer
+          - TheoVanDoesburg
+          - PieterBrueghel
+          - JacobVanCampen-VTM
+          - BarendCornelisKoekkoek
+          - VTP01_BLR
+          - VTP02_BLR
+          - Needle_BLR
+          - Pinwheel_BLR
+          - Whirlpool_BLR
+          - Triangulum_BLR
+          - Blackeye_BLR
+          - Kratu_BLR
+          - Helix_BLR
+          - Cartwheel_BLR
+          - RembrandtVanRijn
+          - Tadpole_BLR
+          - Cigar_BLR
+          - SystemTest_VirtualAzurion
+          - Garga_BLR
+          - VincentVanGogh
+          - HendrikWillemMesdag-2STM
+          - HendrikWillemMesdag-STM
+          - Kanva
+          - SystemTest_VirtualAzurion_2
+          - EL_Capitan
+          - China_System
+          - VASys01_BLR
+          - Spindle_BLR
+          - Helix_BLR
+          - Cosmos_BLR
+          - Butterfly_BLR
+          - Spindle_BLR
+          - Sunflower_BLR
+          - Pandora
+          - Comet_BLR
+          - Bhargava_BLR
+ 
+      Branch:
+        description: TestTooling folder name, not the GitHub branch
+        required: true
+        type: choice
+        options:
+          - master
+          - release-Azurion-R3.0
+          - release-31.x
+          - release-Azurion-R3.5
+          - release-Azurion-R5.0
+ 
+      UseInstalledPDC:
+        required: true
+        type: boolean
+        default: false
+ 
+      JobName:
+        required: true
+        type: choice
+        options:
+          - AcquisitionMain
+          - GeoMain
+          - PerformanceMain
+          - ServiceWorkflowBatch01_Main
+          - ServiceWorkflowBatch02_Main
+          - ServiceWorkflowBatch03_Main
+          - ServiceWorkflowBatch04_Main
+          - ServiceWorkflowBatch05_Main
+          - ServiceWorkflowBatch06_Main
+          - ServiceWorkflowBatch07_Main
+          - HospitalWorkFlowBatch01_Main
+          - HospitalWorkFlowBatch02_Main
+          - HospitalWorkFlowBatch03_Main
+          - HospitalWorkFlowBatch04_Main
+          - HospitalWorkflowMasterBatch01_Main
+          - LicensesMain
+          - ViewingMain
+          - FlexibleViewingMain
+          - AcquisitionMainlineDaily
+          - PerformanceMainlineDaily
+          - GeoMainlineDaily
+          - HospitalWorkFlowMainlineDaily
+          - ServiceWorkflowBatch01_MainlineDaily
+          - ServiceWorkflowBatch02_MainlineDaily
+          - LicensesMainlineDaily
+          - ViewingMainlineDaily
+          - FlexibleViewingMainlineDaily
+          - ReliabilityMain
+          - iProcedureMain
+          - RestoreMain
+          - HospitalWorkflowBatch01_MainlineDaily
+          - ProcessingMain
+          - iXrayControlMain
+ 
+      AllJobs:
+        description: Comma-separated jobs used when RunAllJobs is true
+        required: false
+        type: string
+        default: 'AcquisitionMain,PerformanceMain,GeoMain,FlexibleViewingMain,ViewingMain,ServiceWorkflowBatch01_Main,ServiceWorkflowBatch02_Main,ServiceWorkflowBatch03_Main,Reliability'
+ 
+      RunAllJobs:
+        required: true
+        type: boolean
+        default: false
+ 
+      TestCategories:
+        description: NUnit categories for Viewing execution
+        required: false
+        type: string
+ 
+      TEST_END_TIME:
+        description: Local PC time in YYYY-MM-DD HH:mm
+        required: false
+        type: string
+ 
+      RestoreName:
+        description: Backup folder name for RestoreMain
+        required: false
+        type: string
+ 
+      RestoreFromLocation:
+        description: Folder containing the RestoreMain backup
+        required: false
+        type: string
+        default: '\\code1.emi.philips.com\storage\SDI_Publish\TestSystems\Backups'
+ 
 jobs:
-  test-runner:
-    runs-on: [self-hosted, Windows, X64]
-
+  MainlineTeamTests:
+    runs-on: [self-hosted, Windows, '${{ inputs.SystemName }}']
+ 
+    env:
+      SystemName: ${{ inputs.SystemName }}
+      Branch: ${{ inputs.Branch }}
+      UseInstalledPDC: ${{ inputs.UseInstalledPDC }}
+      JobName: ${{ inputs.JobName }}
+      AllJobs: ${{ inputs.AllJobs }}
+      RunAllJobs: ${{ inputs.RunAllJobs }}
+      TestCategories: ${{ inputs.TestCategories }}
+      TEST_END_TIME: ${{ inputs.TEST_END_TIME }}
+      RestoreName: ${{ inputs.RestoreName }}
+      RestoreFromLocation: ${{ inputs.RestoreFromLocation }}
+ 
     steps:
-      - name: Create runner verification log
+      - name: Execute MainlineTeamTests
         shell: powershell
         run: |
-          $logFolder = "C:\GitHubRunnerTest"
-          $logFile = "$logFolder\runner-test.log"
-
-          New-Item -ItemType Directory -Path $logFolder -Force | Out-Null
-
-          @"
-          ===== GITHUB ACTIONS RUNNER TEST =====
-          Date          : $(Get-Date)
-          Runner Name   : $env:RUNNER_NAME
-          Computer Name : $env:COMPUTERNAME
-          User          : $(whoami)
-          Working Dir   : $(Get-Location)
-          Result        : SUCCESS
-          ======================================
-          "@ | Out-File -FilePath $logFile -Append
-
-          Write-Host "Log created:"
-          Write-Host $logFile
+          $ErrorActionPreference = 'Stop'
+ 
+          $JenkinsBatchesPath = '\\nlybstqvp4dt7nv\JenkinsBatches'
+          $DataPath = 'D:\Jenkins'
+          $GenericApproach = Join-Path $DataPath 'GenericApproach'
+          $HooksIni = 'C:\Program Files (x86)\FAST\Hooks.ini'
+          $InstallationIni = 'C:\Program Files (x86)\FAST\Installation.ini'
+          $restoreLocationOnSuitePC = 'D:\SystemBackups'
+ 
+          function Invoke-Batch {
+            param(
+              [string] $Path,
+              [string[]] $Arguments = @()
+            )
+ 
+            if (-not (Test-Path -LiteralPath $Path)) {
+              throw "Batch file not found: $Path"
+            }
+ 
+            & $Path @Arguments | Out-Host
+            return $LASTEXITCODE
+          }
+ 
+          function GetKillingCommands {
+            & wmic.exe process where "name like 'nunit%.exe'" delete | Out-Host
+            & wmic.exe process where "name like 'TAFTafFVAdapterCSExeCOMServer.exe'" delete | Out-Host
+            & wmic.exe process where "name like 'iCapture%.exe'" delete | Out-Host
+            & wmic.exe process where "name like 'testcentric%.exe'" delete | Out-Host
+          }
+ 
+          function Set-TestEndDateTime {
+            param([string] $Value)
+ 
+            if (Test-Path -LiteralPath $HooksIni) {
+              $content = Get-Content -LiteralPath $HooksIni
+ 
+              if ($content -match '^TestEndDateTime\s*=') {
+                $content -replace '^TestEndDateTime\s*=.*', "TestEndDateTime = $Value" |
+                  Set-Content -LiteralPath $HooksIni
+              }
+              else {
+                Add-Content -LiteralPath $HooksIni "TestEndDateTime = $Value"
+              }
+            }
+            else {
+              Write-Host 'Hooks.ini file not found. Skipping TestEndDateTime update.'
+            }
+          }
+ 
+          if ($env:RUNNER_NAME -ne $env:SystemName -or
+              $env:RUNNER_NAME -eq 'master') {
+            throw "Expected SystemName '$env:SystemName'; running on '$env:RUNNER_NAME'."
+          }
+ 
+          while (-not (Test-Path -LiteralPath $JenkinsBatchesPath)) {
+            Write-Host 'Server busy... waiting'
+            Start-Sleep -Seconds 10
+          }
+ 
+          & robocopy.exe `
+            (Join-Path $JenkinsBatchesPath 'Tools') `
+            (Join-Path $DataPath 'Tools') `
+            /E /XO /FFT /MT:8 /R:3 /W:5 /NP /NFL /NDL | Out-Host
+ 
+          if ($LASTEXITCODE -ge 8) {
+            throw "Failed to copy Tools: robocopy exit code $LASTEXITCODE"
+          }
+ 
+          & robocopy.exe `
+            (Join-Path $JenkinsBatchesPath 'Batches\GenericApproach') `
+            $GenericApproach `
+            /E /XO /FFT /MT:8 /R:3 /W:5 /NP /NFL /NDL | Out-Host
+ 
+          if ($LASTEXITCODE -ge 8) {
+            throw "Failed to copy GenericApproach: robocopy exit code $LASTEXITCODE"
+          }
+ 
+          GetKillingCommands
+          Start-Sleep -Seconds 5
+ 
+          if ($env:UseInstalledPDC -ne 'true') {
+            $installExitCode = Invoke-Batch `
+              (Join-Path $GenericApproach 'install_fast_jenkins.cmd') `
+              @($env:Branch)
+ 
+            # Jenkins uses returnStatus: true without checking this code.
+            Write-Host "Install FAST exit code: $installExitCode"
+          }
+          else {
+            Write-Host 'Skipping FAST installation because UseInstalledPDC is checked.'
+          }
+ 
+          Set-TestEndDateTime $env:TEST_END_TIME
+ 
+          $endTime = $null
+          if (-not [string]::IsNullOrWhiteSpace($env:TEST_END_TIME)) {
+            $endTime = [datetime]::ParseExact(
+              $env:TEST_END_TIME,
+              'yyyy-MM-dd HH:mm',
+              [Globalization.CultureInfo]::InvariantCulture
+            )
+          }
+ 
+          $jobsToRun = if ($env:RunAllJobs -eq 'true') {
+            @(
+              $env:AllJobs.Split(',') |
+                ForEach-Object { $_.Trim() } |
+                Where-Object { $_ }
+            )
+          }
+          else {
+            @($env:JobName)
+          }
+ 
+          Write-Host "Jobs selected: $($jobsToRun -join ', ')"
+ 
+          foreach ($job in $jobsToRun) {
+            try {
+              if ($null -ne $endTime -and (Get-Date) -gt $endTime) {
+                Write-Host "Skipping $job - End time reached"
+                break
+              }
+ 
+              $refreshExitCode = Invoke-Batch `
+                (Join-Path $GenericApproach 'copy_nunit_specflow.cmd')
+ 
+              # Jenkins uses returnStatus: true without checking this code.
+              Write-Host "Refresh Environment exit code: $refreshExitCode"
+ 
+              if ($job -eq 'RestoreMain') {
+                if ([string]::IsNullOrWhiteSpace($env:RestoreName)) {
+                  Write-Host 'RestoreName is mandatory. Skipping RestoreMain.'
+                  continue
+                }
+ 
+                if ([string]::IsNullOrWhiteSpace($env:RestoreFromLocation)) {
+                  Write-Host 'RestoreFromLocation is mandatory. Skipping RestoreMain.'
+                  continue
+                }
+ 
+                if (-not (Test-Path -LiteralPath $InstallationIni)) {
+                  Write-Host 'Installation.ini not found. Skipping RestoreMain.'
+                  continue
+                }
+ 
+                $content = Get-Content -LiteralPath $InstallationIni
+                $content = $content -replace `
+                  '^RestoreLocationOnSuitePC\s*=.*', `
+                  "RestoreLocationOnSuitePC = $restoreLocationOnSuitePC"
+                $content = $content -replace `
+                  '^RestoreFromLocation\s*=.*', `
+                  "RestoreFromLocation = $($env:RestoreFromLocation)"
+                $content = $content -replace `
+                  '^RestoreName\s*=.*', `
+                  "RestoreName = $($env:RestoreName)"
+                Set-Content -LiteralPath $InstallationIni -Value $content
+              }
+ 
+              $exitCode = Invoke-Batch `
+                (Join-Path $GenericApproach 'execute_test_batch_jenkins.cmd') `
+                @($job, $env:TestCategories)
+ 
+              if ($exitCode -eq 9999) {
+                Write-Host 'Abort detected. Running ResetNidaq...'
+ 
+                $resetExitCode = Invoke-Batch `
+                  (Join-Path $GenericApproach 'execute_test_batch_jenkins.cmd') `
+                  @('ResetNidaq')
+ 
+                if ($resetExitCode -ne 0) {
+                  throw "ResetNidaq failed with exit code $resetExitCode."
+                }
+ 
+                throw "Pipeline stopped due to abort in $job."
+              }
+ 
+              $copyExitCode = Invoke-Batch `
+                (Join-Path $GenericApproach 'copy_results_to_nightbatch_jenkins.cmd') `
+                @($job)
+ 
+              if ($copyExitCode -ne 0) {
+                throw "NightBatch copy failed for $job with exit code $copyExitCode."
+              }
+ 
+              # As in the supplied Groovy, an ordinary nonzero test exit
+              # does not itself stop execution.
+              if ($exitCode -ne 0) {
+                Write-Warning "Test batch for $job returned $exitCode."
+              }
+            }
+            finally {
+              GetKillingCommands
+            }
+          }
+ 
+          Set-TestEndDateTime ''
