@@ -168,7 +168,7 @@ on:
  
 jobs:
   MainlineTeamTests:
-    runs-on: [self-hosted, Windows, '${{ inputs.SystemName }}']
+    runs-on: [self-hosted, Windows, X64]
  
     env:
       SystemName: ${{ inputs.SystemName }}
