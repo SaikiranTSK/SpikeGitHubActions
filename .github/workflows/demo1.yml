@@ -1,4 +1,4 @@
-name: MainlineTeamTests
+name: MainlineTeamTestsDemo
 run-name: ${{ inputs.SystemName }} - ${{ inputs.JobName }}
  
 on:
