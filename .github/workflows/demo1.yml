@@ -97,6 +97,7 @@ on:
         required: true
         type: choice
         options:
+          - AcceptanceTesting
           - AcquisitionMain
           - GeoMain
           - PerformanceMain
