@@ -101,6 +101,7 @@ on:
         type: choice
         options:
           - AcquisitionMain
+          - AcceptanceTesting
           - GeoMain
           - PerformanceMain
           - ServiceWorkflowBatch01_Main
