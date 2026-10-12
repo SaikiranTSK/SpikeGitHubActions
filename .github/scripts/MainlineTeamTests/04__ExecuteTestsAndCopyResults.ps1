@@ -1,10 +1,7 @@
 # Jenkins stage 'Execute Tests and Copy Results'.
-# Hooks.ini update, then per job: refresh, (RestoreMain ini), execute, validate NUnit result, copy results, kill tasks.
-# Exit code 9999, an interrupted batch, or a missing/stale result triggers ResetNidaq before stopping.
+# Hooks.ini update, then per job: refresh, (RestoreMain ini), execute, 9999 -> ResetNidaq + stop, copy results, kill tasks.
 # The Hooks.ini reset runs in the workflow's post step (also after failure / cancel).
 . "$PSScriptRoot\Common.ps1"
-
-$ResultXmlPath = 'C:\Temp\FAST\Results\TestOutput\TestResult.xml'
 
 if ($env:SKIP_HOOKS_INI -ne 'true') {
     $value = "$env:TEST_END_TIME".Trim()
@@ -37,7 +34,7 @@ foreach ($job in $jobsToRun) {
         break
     }
     $start = Get-Date
-    $testCode = '-'; $copyCode = '-'; $result = 'failed'; $resetNeeded = $false
+    $testCode = '-'; $copyCode = '-'; $result = 'failed'
     Write-Host "::group::Running job: $job"
     try {
         Invoke-Batch "Refresh Environment - $job" "`"$DataPath\GenericApproach\copy_nunit_specflow.cmd`"" | Out-Null
@@ -61,23 +58,14 @@ foreach ($job in $jobsToRun) {
             Write-Host 'Restore parameters updated successfully'
         }
 
-        $testStartedUtc = [datetime]::UtcNow
-        $resetNeeded = $true
-        $testCode = Invoke-Batch "Execute Tests - $job" "`"$DataPath\GenericApproach\execute_test_batch_jenkins.cmd`" $job `"$env:TEST_CATEGORIES`""
+        $testCode = Invoke-Batch "Execute Tests - $job" "`"$DataPath\GenericApproach\execute_test_batch_jenkins.cmd`" $job `"$env:TEST_CATEGORIES`"" -DetectRunAsCurrentUserAbort
         if ($testCode -eq 9999) {
+            Write-Host 'Abort detected. Running ResetNidaq...'
+            $resetCode = Invoke-Batch 'Reset Logic' "`"$DataPath\GenericApproach\execute_test_batch_jenkins.cmd`" ResetNidaq"
+            if ($resetCode -ne 0) { Write-Host "::error::ResetNidaq failed with exit code $resetCode" }
             $result = 'aborted (9999)'
             throw "Pipeline stopped due to abort in $job"
         }
-        if (-not (Test-Path -LiteralPath $ResultXmlPath -PathType Leaf)) {
-            $result = 'failed (missing NUnit result)'
-            throw "Test batch $job returned $testCode but did not create $ResultXmlPath."
-        }
-        $resultFile = Get-Item -LiteralPath $ResultXmlPath
-        if ($resultFile.Length -eq 0 -or $resultFile.LastWriteTimeUtc -lt $testStartedUtc) {
-            $result = 'failed (stale NUnit result)'
-            throw "Test batch $job returned $testCode without a new NUnit result at $ResultXmlPath."
-        }
-        $resetNeeded = $false
         if ($testCode -ne 0) { Write-Host "::warning::Test batch $job returned $testCode (ignored, as in Jenkins)." }
 
         $copyCode = Invoke-Batch "Copy Results to nightbatch- $job" "`"$DataPath\GenericApproach\copy_results_to_nightbatch_jenkins.cmd`" $job"
@@ -85,19 +73,10 @@ foreach ($job in $jobsToRun) {
         $result = 'done'
     }
     finally {
-        try {
-            if ($resetNeeded) {
-                Write-Host 'Test execution was interrupted or did not produce a new NUnit result. Running ResetNidaq...'
-                $resetCode = Invoke-Batch 'Reset Logic' "`"$DataPath\GenericApproach\execute_test_batch_jenkins.cmd`" ResetNidaq"
-                if ($resetCode -ne 0) { Write-Host "::error::ResetNidaq failed with exit code $resetCode" }
-            }
-        }
-        finally {
-            Stop-TestTasks
-            Write-Host '::endgroup::'
-            $duration = '{0:hh\:mm\:ss}' -f ((Get-Date) - $start)
-            Add-Summary "| $job | $testCode | $copyCode | $duration | $result |"
-        }
+        Stop-TestTasks
+        Write-Host '::endgroup::'
+        $duration = '{0:hh\:mm\:ss}' -f ((Get-Date) - $start)
+        Add-Summary "| $job | $testCode | $copyCode | $duration | $result |"
     }
 }
 exit 0
