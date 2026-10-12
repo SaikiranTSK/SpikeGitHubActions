@@ -9,12 +9,22 @@ $HooksIni = 'C:\Program Files (x86)\FAST\Hooks.ini'
 $InstallationIni = 'C:\Program Files (x86)\FAST\Installation.ini'
 $RestoreLocationOnSuitePC = 'D:\SystemBackups'
 
-# Runs a command line like Jenkins 'bat' (arguments passed as given) and returns its exit code.
-function Invoke-Batch([string] $Label, [string] $CommandLine) {
+# Runs a command line like Jenkins 'bat'. The test wrapper can mask RunAsCurrentUser's 9999 with exit code 0.
+function Invoke-Batch([string] $Label, [string] $CommandLine, [switch] $DetectRunAsCurrentUserAbort) {
     Write-Host "### $Label : $CommandLine"
     $env:BATCH_CMD = $CommandLine
-    cmd.exe /d /s /c --% "%BATCH_CMD%" | Out-Host
+    $runAsResult = @{ Code = $null }
+    cmd.exe /d /s /c --% "%BATCH_CMD%" | ForEach-Object {
+        if ($DetectRunAsCurrentUserAbort -and $_ -match '^\s*\[Info\].*:\s*Result code:\s*([0-9]+)\s*$') {
+            $runAsResult.Code = $Matches[1]
+        }
+        $_
+    } | Out-Host
     $rc = $LASTEXITCODE
+    if ($DetectRunAsCurrentUserAbort -and $runAsResult.Code -eq '9999' -and $rc -ne 9999) {
+        Write-Host "### $Label - RunAsCurrentUser returned 9999; batch wrapper returned $rc."
+        $rc = 9999
+    }
     Write-Host "### $Label exit code: $rc"
     return $rc
 }
