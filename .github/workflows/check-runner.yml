@@ -1,0 +1,46 @@
+# Reusable pre-check, replaces the Jenkins script block that loops over Jenkins.instance.nodes
+# and fails with "Specified node ... not available".
+# Without it a job for a system without runner just stays Queued.
+# Needs secret RUNNERS_READ_TOKEN (fine-grained PAT, repo "Administration: read"); if the secret is
+# missing the check is skipped with a warning. Set repo variable RUNNER_CHECK=false to skip the job.
+name: check-runner
+
+on:
+  workflow_call:
+    inputs:
+      system-name:
+        description: Side PC / runner name
+        required: true
+        type: string
+    secrets:
+      RUNNERS_READ_TOKEN:
+        required: false
+
+jobs:
+  check-runner:
+    name: Check runner ${{ inputs.system-name }} is available
+    if: vars.RUNNER_CHECK != 'false'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Look up runner
+        env:
+          GH_TOKEN: ${{ secrets.RUNNERS_READ_TOKEN }}
+          SYSTEM_NAME: ${{ inputs.system-name }}
+          REPO: ${{ github.repository }}
+        run: |
+          if [ -z "$GH_TOKEN" ]; then
+            echo "::warning::RUNNERS_READ_TOKEN not set, runner check skipped."
+            exit 0
+          fi
+          status=$(gh api "repos/$REPO/actions/runners" --paginate \
+            --jq ".runners[] | select(.name == \"$SYSTEM_NAME\") | .status")
+          if [ -z "$status" ]; then
+            echo "::error::Specified system '$SYSTEM_NAME' has no runner. Install it with GitHub-Runner-Client."
+            exit 1
+          fi
+          if [ "$status" != "online" ]; then
+            echo "::error::Runner '$SYSTEM_NAME' is $status."
+            exit 1
+          fi
+          echo "Runner '$SYSTEM_NAME' is online."

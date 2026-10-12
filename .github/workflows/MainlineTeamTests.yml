@@ -1,0 +1,247 @@
+# GitHub Actions version of Jenkins\PipelineScriptBackup\MainlineTeamTests.groovy
+# Docs: docs\pipelines\MainlineTeamTests.md
+name: MainlineTeamTests
+run-name: ${{ inputs.SystemName }} - ${{ inputs.RunAllJobs && 'AllJobs' || inputs.JobName }}
+
+on:
+  workflow_dispatch:
+    inputs:
+      SystemName:
+        description: Side PC (runner name / label)
+        required: true
+        type: choice
+        options:
+          - Technopolis6
+          - Technopolis5
+          - BV3
+          - AntonPieck
+          - AntonMauve-VTM
+          - AlanTuring
+          - AlbertCuyp
+          - CarelFabritius
+          - Corneille
+          - DickBruna
+          - DevOps2
+          - Escher
+          - FransHals
+          - GerardVanHonthorst
+          - IsaacIsraels
+          - JanToorop
+          - JeroenBosch
+          - JohannesVermeer
+          - JudithLeyster
+          - Pagode
+          - PaulusPotter
+          - PietMondriaan
+          - Rotterdam
+          - Technopolis4
+          - Technopolis7
+          - WillemDeKooning
+          - JozefIsraels
+          - AntonMauve-STM
+          - JacobVanCampen
+          - MariaVanOosterwijck
+          - VTP01_BLR
+          - JacobVanRuisdael
+          - JanSteen
+          - CornelisSpringer
+          - TheoVanDoesburg
+          - PieterBrueghel
+          - JacobVanCampen-VTM
+          - BarendCornelisKoekkoek
+          - VTP02_BLR
+          - Needle_BLR
+          - Pinwheel_BLR
+          - Whirlpool_BLR
+          - Triangulum_BLR
+          - Blackeye_BLR
+          - Kratu_BLR
+          - Helix_BLR
+          - Cartwheel_BLR
+          - RembrandtVanRijn
+          - Tadpole_BLR
+          - Cigar_BLR
+          - SystemTest_VirtualAzurion
+          - Garga_BLR
+          - VincentVanGogh
+          - HendrikWillemMesdag-2STM
+          - HendrikWillemMesdag-STM
+          - Kanva
+          - SystemTest_VirtualAzurion_2
+          - EL_Capitan
+          - China_System
+          - VASys01_BLR
+          - Spindle_BLR
+          - Cosmos_BLR
+          - Butterfly_BLR
+          - Sunflower_BLR
+          - Pandora
+          - Comet_BLR
+          - Bhargava_BLR
+      Branch:
+        description: TestTooling build folder used to install FAST (not a git branch)
+        required: true
+        type: choice
+        default: master
+        options:
+          - master
+          - release-Azurion-R3.0
+          - release-31.x
+          - release-Azurion-R3.5
+          - release-Azurion-R5.0
+      UseInstalledPDC:
+        description: Skip the FAST installation and use the FAST already installed
+        required: false
+        type: boolean
+        default: false
+      JobName:
+        description: Test batch to run (ignored when RunAllJobs is checked)
+        required: true
+        type: choice
+        options:
+          - AcquisitionMain
+          - GeoMain
+          - PerformanceMain
+          - ServiceWorkflowBatch01_Main
+          - ServiceWorkflowBatch02_Main
+          - ServiceWorkflowBatch03_Main
+          - ServiceWorkflowBatch04_Main
+          - ServiceWorkflowBatch05_Main
+          - ServiceWorkflowBatch06_Main
+          - ServiceWorkflowBatch07_Main
+          - HospitalWorkFlowBatch01_Main
+          - HospitalWorkFlowBatch02_Main
+          - HospitalWorkFlowBatch03_Main
+          - HospitalWorkFlowBatch04_Main
+          - HospitalWorkflowMasterBatch01_Main
+          - LicensesMain
+          - ViewingMain
+          - FlexibleViewingMain
+          - AcquisitionMainlineDaily
+          - PerformanceMainlineDaily
+          - GeoMainlineDaily
+          - HospitalWorkFlowMainlineDaily
+          - ServiceWorkflowBatch01_MainlineDaily
+          - ServiceWorkflowBatch02_MainlineDaily
+          - LicensesMainlineDaily
+          - ViewingMainlineDaily
+          - FlexibleViewingMainlineDaily
+          - ReliabilityMain
+          - iProcedureMain
+          - RestoreMain
+          - HospitalWorkflowBatch01_MainlineDaily
+          - ProcessingMain
+          - iXrayControlMain
+      RunAllJobs:
+        description: Run every job in AllJobs (in order) instead of JobName
+        required: false
+        type: boolean
+        default: false
+      AllJobs:
+        description: Comma separated job names used when RunAllJobs is checked
+        required: false
+        type: string
+        default: AcquisitionMain,PerformanceMain,GeoMain,FlexibleViewingMain,ViewingMain,ServiceWorkflowBatch01_Main,ServiceWorkflowBatch02_Main,ServiceWorkflowBatch03_Main,ReliabilityMain
+      TestCategories:
+        description: Optional NUnit categories passed as 2nd argument to the test batch
+        required: false
+        type: string
+        default: ''
+      TEST_END_TIME:
+        description: "Optional local side PC time 'yyyy-MM-dd HH:mm'; no new job starts after it (also written to Hooks.ini)"
+        required: false
+        type: string
+        default: ''
+      RestoreName:
+        description: Backup folder name (RestoreMain only)
+        required: false
+        type: string
+        default: ''
+      RestoreFromLocation:
+        description: Folder that contains the backup (RestoreMain only)
+        required: false
+        type: string
+        default: \\code1.emi.philips.com\storage\SDI_Publish\TestSystems\Backups
+
+  # Same pipeline, called by ExternalInterfaceAutomation.yml (Jenkins job with the same stages).
+  workflow_call:
+    inputs:
+      SystemName: { type: string, required: true }
+      Branch: { type: string, required: false, default: master }
+      UseInstalledPDC: { type: boolean, required: false, default: false }
+      JobName: { type: string, required: true }
+      RunAllJobs: { type: boolean, required: false, default: false }
+      AllJobs: { type: string, required: false, default: '' }
+      TestCategories: { type: string, required: false, default: '' }
+      TEST_END_TIME: { type: string, required: false, default: '' }
+      RestoreName: { type: string, required: false, default: '' }
+      RestoreFromLocation: { type: string, required: false, default: '' }
+      SkipHooksIni:
+        description: Do not touch TestEndDateTime in Hooks.ini (the Jenkins ExternalInterfaceAutomation job never does)
+        type: boolean
+        required: false
+        default: false
+
+permissions:
+  contents: read
+
+env:
+  # Paths (D:\Jenkins, Hooks.ini, Installation.ini, D:\SystemBackups) are in .github\scripts\MainlineTeamTests\Common.ps1
+  BATCHES_SHARE: ${{ vars.BATCHES_SHARE || '\\nlybstqvp4dt7nv\JenkinsBatches' }}
+
+jobs:
+  check-runner:
+    uses: ./.github/workflows/check-runner.yml
+    with:
+      system-name: ${{ inputs.SystemName }}
+    secrets: inherit
+
+  run-tests:
+    name: MainlineTeamTests on ${{ inputs.SystemName }}
+    needs: check-runner
+    if: ${{ !failure() && !cancelled() }}
+    runs-on: [self-hosted, Windows, '${{ inputs.SystemName }}']
+    # lock(resource: "lock_" + SystemName): no concurrency group on purpose. The side PC has one runner, so jobs for it
+    # wait in the runner queue one after the other, like the Jenkins lock queue. A concurrency group would keep only
+    # one pending run and cancel the others.
+    timeout-minutes: 1440
+    # Same 4 stages as the Jenkins Stage View; each stage is one step running one numbered script.
+    defaults:
+      run:
+        shell: powershell
+    env:
+      SCRIPTS: ${{ github.workspace }}\.github\scripts\MainlineTeamTests
+      SYSTEM_NAME: ${{ inputs.SystemName }}
+      JOB_TITLE: ${{ inputs.RunAllJobs && 'AllJobs' || inputs.JobName }}
+      BRANCH: ${{ inputs.Branch }}
+      USE_INSTALLED_PDC: ${{ inputs.UseInstalledPDC }}
+      SKIP_HOOKS_INI: ${{ inputs.SkipHooksIni }}
+      JOB_NAME: ${{ inputs.JobName }}
+      ALL_JOBS: ${{ inputs.AllJobs }}
+      RUN_ALL_JOBS: ${{ inputs.RunAllJobs }}
+      TEST_CATEGORIES: ${{ inputs.TestCategories }}
+      TEST_END_TIME: ${{ inputs.TEST_END_TIME }}
+      RESTORE_NAME: ${{ inputs.RestoreName }}
+      RESTORE_FROM_LOCATION: ${{ inputs.RestoreFromLocation }}
+    steps:
+      - name: Get pipeline scripts
+        uses: actions/checkout@v4
+        with:
+          sparse-checkout: .github
+
+      - name: Copy tools from share
+        run: '& "$env:SCRIPTS\01__CopyToolsFromShare.ps1"'
+
+      - name: Check running on node
+        run: '& "$env:SCRIPTS\02__CheckRunningOnNode.ps1"'
+
+      - name: Prepare Environment
+        run: '& "$env:SCRIPTS\03__PrepareEnvironment.ps1"'
+
+      - name: Execute Tests and Copy Results
+        run: '& "$env:SCRIPTS\04__ExecuteTestsAndCopyResults.ps1"'
+
+      # Jenkins post: "RESET TestEndDateTime BEFORE LOCK RELEASE" - also after a failure or cancel.
+      - name: Post - Reset Hooks.ini TestEndDateTime
+        if: ${{ always() && !inputs.SkipHooksIni }}
+        run: '& "$env:SCRIPTS\05__ResetHooksIni.ps1"'
