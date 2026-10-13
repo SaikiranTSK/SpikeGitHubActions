@@ -1,11 +1,16 @@
 # Jenkins stage 'Execute Tests and Copy Results'.
 # Hooks.ini update, then per job: refresh, (RestoreMain ini), execute, 9999 -> ResetNidaq + stop, copy results, kill tasks.
-# The Hooks.ini reset runs in the workflow's post step (also after failure / cancel).
+# After the loop: Hooks.ini reset. As in Jenkins (inside catchError) it is skipped when a job stops the loop.
 . "$PSScriptRoot\Common.ps1"
 
 if ($env:SKIP_HOOKS_INI -ne 'true') {
-    $value = "$env:TEST_END_TIME".Trim()
-    if ($value) { Write-Host "Updating Hooks.ini: $value" } else { Write-Host 'TEST_END_TIME empty -> clearing value in Hooks.ini' }
+    $value = "$env:TEST_END_TIME"
+    if (-not $value.Trim()) {
+        Write-Host "TEST_END_TIME empty $([char]0x2192) clearing value in Hooks.ini"
+        $value = ''
+    } else {
+        Write-Host "Updating Hooks.ini: $value"
+    }
     Set-HooksTestEndDateTime $value
 }
 
@@ -44,7 +49,10 @@ foreach ($job in $jobsToRun) {
             $skip = $null
             if (-not "$env:RESTORE_NAME".Trim()) { $skip = 'RestoreName is mandatory for RestoreMain execution.' }
             elseif (-not "$env:RESTORE_FROM_LOCATION".Trim()) { $skip = 'RestoreFromLocation is mandatory for RestoreMain execution.' }
-            elseif (-not (Test-Path -LiteralPath $InstallationIni)) { $skip = 'Installation.ini file not found.' }
+            elseif (-not (Test-Path -LiteralPath $InstallationIni)) {
+                Write-Host 'Installation.ini file not found'
+                $skip = 'Failed to update Installation.ini for RestoreMain.'
+            }
             if ($skip) {
                 Write-Host "$skip Skipping RestoreMain and continuing with remaining jobs."
                 $result = 'skipped (restore params)'
@@ -58,7 +66,7 @@ foreach ($job in $jobsToRun) {
             Write-Host 'Restore parameters updated successfully'
         }
 
-        $testCode = Invoke-Batch "Execute Tests - $job" "`"$DataPath\GenericApproach\execute_test_batch_jenkins.cmd`" $job `"$env:TEST_CATEGORIES`"" -DetectRunAsCurrentUserAbort
+        $testCode = Invoke-Batch "Execute Tests - $job" "`"$DataPath\GenericApproach\execute_test_batch_jenkins.cmd`" $job `"$env:TEST_CATEGORIES`""
         if ($testCode -eq 9999) {
             Write-Host 'Abort detected. Running ResetNidaq...'
             $resetCode = Invoke-Batch 'Reset Logic' "`"$DataPath\GenericApproach\execute_test_batch_jenkins.cmd`" ResetNidaq"
@@ -78,5 +86,11 @@ foreach ($job in $jobsToRun) {
         $duration = '{0:hh\:mm\:ss}' -f ((Get-Date) - $start)
         Add-Summary "| $job | $testCode | $copyCode | $duration | $result |"
     }
+}
+
+if ($env:SKIP_HOOKS_INI -ne 'true') {
+    # RESET TestEndDateTime BEFORE LOCK RELEASE
+    Write-Host 'Resetting TestEndDateTime in Hooks.ini'
+    Set-HooksTestEndDateTime -Reset
 }
 exit 0
