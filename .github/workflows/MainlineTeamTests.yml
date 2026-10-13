@@ -79,7 +79,7 @@ on:
           - Comet_BLR
           - Bhargava_BLR
       Branch:
-        description: TestTooling build folder used to install FAST (not a git branch)
+        description: Exact name of the folder that can be found here:\\code1.emi.philips.com\storage\IGTS_WIP_Storage\CIBuilds\TestTooling
         required: true
         type: choice
         default: master
@@ -144,12 +144,12 @@ on:
         type: string
         default: AcquisitionMain,PerformanceMain,GeoMain,FlexibleViewingMain,ViewingMain,ServiceWorkflowBatch01_Main,ServiceWorkflowBatch02_Main,ServiceWorkflowBatch03_Main,ReliabilityMain
       TestCategories:
-        description: Optional NUnit categories passed as 2nd argument to the test batch
+        description: "Viewing only: enter NUnit categories or a filter. Leave blank for defaults; Test.PreLoop.Generic and Test.PostLoop.Generic are added automatically."
         required: false
         type: string
         default: ''
       TEST_END_TIME:
-        description: "Optional local side PC time 'yyyy-MM-dd HH:mm'; no new job starts after it (also written to Hooks.ini)"
+        description: Defines test end time to update Hooks.ini (YYYY-MM-DD HH:mm).
         required: false
         type: string
         default: ''
@@ -159,7 +159,8 @@ on:
         type: string
         default: ''
       RestoreFromLocation:
-        description: Folder that contains the backup (RestoreMain only)
+        description: Name of the backup to be restored.Example CV_722079_STM2014_11122024015157_fd16
+                     This value must match the backup folder name available in RestoreFromLocation.
         required: false
         type: string
         default: \\code1.emi.philips.com\storage\SDI_Publish\TestSystems\Backups
@@ -178,7 +179,7 @@ on:
       RestoreName: { type: string, required: false, default: '' }
       RestoreFromLocation: { type: string, required: false, default: '' }
       SkipHooksIni:
-        description: Do not touch TestEndDateTime in Hooks.ini (the Jenkins ExternalInterfaceAutomation job never does)
+        description: Do not touch TestEndDateTime in Hooks.ini
         type: boolean
         required: false
         default: false
