@@ -1,0 +1,83 @@
+name: RestartSidePC
+run-name: ${{ inputs.SystemName }}_${{ inputs.Batch }}
+
+on:
+  workflow_dispatch:
+    inputs:
+      SystemName:
+        description: Side PC (runner name / label)
+        required: true
+        type: string
+      Batch:
+        description: Batch folder name
+        required: true
+        type: string
+        default: RestartSidePC
+
+permissions:
+  contents: read
+
+env:
+  BATCHES_SHARE: ${{ vars.BATCHES_SHARE || '\\nlybstqvp4dt7nv\JenkinsBatches' }}
+
+jobs:
+  check-runner:
+    uses: ./.github/workflows/check-runner.yml
+    with:
+      system-name: ${{ inputs.SystemName }}
+    secrets: inherit
+
+  restart-side-pc:
+    name: RestartSidePC on ${{ inputs.SystemName }}
+    needs: check-runner
+    if: ${{ !failure() && !cancelled() }}
+    runs-on: [self-hosted, Windows, '${{ inputs.SystemName }}']
+    timeout-minutes: 1440
+    defaults:
+      run:
+        shell: powershell
+    env:
+      SYSTEM_NAME: ${{ inputs.SystemName }}
+      BATCH: ${{ inputs.Batch }}
+    steps:
+      - name: Get pipeline scripts
+        uses: actions/checkout@v4
+        with:
+          sparse-checkout: .github
+
+      - name: CopyRundataFromShare
+        run: |
+          if ($env:BATCH -notmatch '^[A-Za-z0-9][A-Za-z0-9_-]*$') {
+            throw "Invalid batch folder name: $env:BATCH"
+          }
+          $serverDirectory = "$env:BATCHES_SHARE\Batches\$env:BATCH"
+          $runPath = "D:\Jenkins\$env:BATCH"
+
+          & robocopy.exe "$env:BATCHES_SHARE\Tools" 'D:\Jenkins\Tools' /E /ZB /MIR /R:3 /W:5 | Out-Host
+          $toolsCode = $LASTEXITCODE
+          if ($toolsCode -ge 8) {
+            throw "Copying Tools failed with robocopy exit code $toolsCode."
+          }
+
+          & robocopy.exe $serverDirectory $runPath /E /ZB /MIR /R:3 /W:5 | Out-Host
+          $batchCode = $LASTEXITCODE
+          if ($batchCode -ge 8) {
+            throw "Copying $env:BATCH failed with robocopy exit code $batchCode."
+          }
+          $global:LASTEXITCODE = 0
+
+      - name: CheckRunningOnNode
+        run: |
+          . "$env:GITHUB_WORKSPACE\.github\scripts\Shared\functions.ps1"
+          CheckRunningOnNode
+
+      - name: WarnUser
+        run: |
+          . "$env:GITHUB_WORKSPACE\.github\scripts\Shared\functions.ps1"
+          KillTasks
+
+      - name: RestartSidePC
+        run: |
+          . "$env:GITHUB_WORKSPACE\.github\scripts\Shared\functions.ps1"
+          $runPath = "D:\Jenkins\$env:BATCH"
+          StartTestsFromBatch $runPath $env:SYSTEM_NAME $env:BATCH
