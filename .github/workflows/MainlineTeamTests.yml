@@ -227,10 +227,24 @@ jobs:
       RESTORE_NAME: ${{ inputs.RestoreName }}
       RESTORE_FROM_LOCATION: ${{ inputs.RestoreFromLocation }}
     steps:
-      - name: Get pipeline scripts
-        uses: actions/checkout@v4
-        with:
-          sparse-checkout: .github
+      # No separate checkout step (Jenkins has none either): the first stage downloads the .github scripts itself
+      # with git (sparse, depth 1, token not saved on the PC), so there is no "Get pipeline scripts" / "Post" step.
+      - name: Copy tools from share
+        env:
+          GIT_TOKEN: ${{ github.token }}
+        run: |
+          $ws = $env:GITHUB_WORKSPACE
+          $auth = 'AUTHORIZATION: basic ' + [Convert]::ToBase64String([Text.Encoding]::ASCII.GetBytes("x-access-token:$env:GIT_TOKEN"))
+          if (Test-Path "$ws\.git") { Remove-Item "$ws\.git" -Recurse -Force }
+          git init -q "$ws"
+          git -C "$ws" config core.sparseCheckout true
+          Set-Content -LiteralPath "$ws\.git\info\sparse-checkout" -Value '/.github/' -Encoding ascii
+          git -C "$ws" -c "http.extraheader=$auth" fetch -q --depth 1 --no-tags "$env:GITHUB_SERVER_URL/$env:GITHUB_REPOSITORY" $env:GITHUB_SHA
+          if ($LASTEXITCODE) { Write-Host "::error::Could not download pipeline scripts ($env:GITHUB_SHA)."; exit $LASTEXITCODE }
+          git -C "$ws" checkout -q --force FETCH_HEAD
+          if ($LASTEXITCODE) { exit $LASTEXITCODE }
+          git -C "$ws" clean -ffdxq
+          & "$env:SCRIPTS\01__CopyToolsFromShare.ps1"
 
       - name: Copy tools from share
         run: '& "$env:SCRIPTS\01__CopyToolsFromShare.ps1"'
