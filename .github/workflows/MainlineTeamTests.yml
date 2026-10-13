@@ -206,7 +206,8 @@ jobs:
     # lock(resource: "lock_" + SystemName): no concurrency group on purpose. The side PC has one runner, so jobs for it
     # wait in the runner queue one after the other, like the Jenkins lock queue. A concurrency group would keep only
     # one pending run and cancel the others.
-    timeout-minutes: 1440
+    # Jenkins has no time limit (runs up to 46 h seen). 7200 min = 5 days = GitHub maximum for self-hosted jobs.
+    timeout-minutes: 7200
     # Same 4 stages as the Jenkins Stage View; each stage is one step running one numbered script.
     defaults:
       run:
@@ -242,8 +243,3 @@ jobs:
 
       - name: Execute Tests and Copy Results
         run: '& "$env:SCRIPTS\04__ExecuteTestsAndCopyResults.ps1"'
-
-      # Jenkins post: "RESET TestEndDateTime BEFORE LOCK RELEASE" - also after a failure or cancel.
-      - name: Post - Reset Hooks.ini TestEndDateTime
-        if: ${{ always() && !inputs.SkipHooksIni }}
-        run: '& "$env:SCRIPTS\05__ResetHooksIni.ps1"'
