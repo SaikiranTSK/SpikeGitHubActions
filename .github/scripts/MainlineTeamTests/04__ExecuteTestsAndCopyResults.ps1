@@ -66,7 +66,7 @@ foreach ($job in $jobsToRun) {
             Write-Host 'Restore parameters updated successfully'
         }
 
-        $testCode = Invoke-Batch "Execute Tests - $job" "`"$DataPath\GenericApproach\execute_test_batch_jenkins.cmd`" $job `"$env:TEST_CATEGORIES`""
+        $testCode = Invoke-Batch "Execute Tests - $job" "`"$DataPath\GenericApproach\execute_test_batch_jenkins.cmd`" $job `"$env:TEST_CATEGORIES`"" -DetectAbort
         if ($testCode -eq 9999) {
             Write-Host 'Abort detected. Running ResetNidaq...'
             $resetCode = Invoke-Batch 'Reset Logic' "`"$DataPath\GenericApproach\execute_test_batch_jenkins.cmd`" ResetNidaq"
