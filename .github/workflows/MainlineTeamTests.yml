@@ -245,10 +245,7 @@ jobs:
           if ($LASTEXITCODE) { exit $LASTEXITCODE }
           git -C "$ws" clean -ffdxq
           & "$env:SCRIPTS\01__CopyToolsFromShare.ps1"
-
-      - name: Copy tools from share
-        run: '& "$env:SCRIPTS\01__CopyToolsFromShare.ps1"'
-
+          
       - name: Check running on node
         run: '& "$env:SCRIPTS\02__CheckRunningOnNode.ps1"'
 
