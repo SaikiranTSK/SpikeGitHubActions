@@ -9,22 +9,12 @@ $HooksIni = 'C:\Program Files (x86)\FAST\Hooks.ini'
 $InstallationIni = 'C:\Program Files (x86)\FAST\Installation.ini'
 $RestoreLocationOnSuitePC = 'D:\SystemBackups'
 
-# Runs a command line like Jenkins 'bat'. The test wrapper can mask RunAsCurrentUser's 9999 with exit code 0.
-function Invoke-Batch([string] $Label, [string] $CommandLine, [switch] $DetectRunAsCurrentUserAbort) {
+# Runs a command line like Jenkins 'bat' (arguments passed as given) and returns its exit code.
+function Invoke-Batch([string] $Label, [string] $CommandLine) {
     Write-Host "### $Label : $CommandLine"
     $env:BATCH_CMD = $CommandLine
-    $runAsResult = @{ Code = $null }
-    cmd.exe /d /s /c --% "%BATCH_CMD%" | ForEach-Object {
-        if ($DetectRunAsCurrentUserAbort -and $_ -match '^\s*\[Info\].*:\s*Result code:\s*([0-9]+)\s*$') {
-            $runAsResult.Code = $Matches[1]
-        }
-        $_
-    } | Out-Host
+    cmd.exe /d /s /c --% "%BATCH_CMD%" | Out-Host
     $rc = $LASTEXITCODE
-    if ($DetectRunAsCurrentUserAbort -and $runAsResult.Code -eq '9999' -and $rc -ne 9999) {
-        Write-Host "### $Label - RunAsCurrentUser returned 9999; batch wrapper returned $rc."
-        $rc = 9999
-    }
     Write-Host "### $Label exit code: $rc"
     return $rc
 }
@@ -41,18 +31,27 @@ function Stop-TestTasks {
         }
 }
 
-function Set-HooksTestEndDateTime([string] $Value) {
+# Same text and messages as the Jenkins bat lines: update writes "TestEndDateTime = <value>" (trailing space when
+# empty), reset writes "TestEndDateTime =".
+function Set-HooksTestEndDateTime([string] $Value, [switch] $Reset) {
+    if ($Reset) {
+        $line = 'TestEndDateTime ='
+        $msgs = 'Hooks.ini file not found. Skipping TestEndDateTime reset.', 'TestEndDateTime reset completed.', 'TestEndDateTime key was missing, added as empty value.'
+    } else {
+        $line = "TestEndDateTime = $Value"
+        $msgs = 'Hooks.ini file not found. Skipping TestEndDateTime update.', 'TestEndDateTime updated in Hooks.ini.', 'TestEndDateTime key was missing, added to Hooks.ini.'
+    }
     if (-not (Test-Path -LiteralPath $HooksIni)) {
-        Write-Host 'Hooks.ini file not found. Skipping TestEndDateTime update.'
+        Write-Host $msgs[0]
         return
     }
-    $content = @(Get-Content -LiteralPath $HooksIni)
+    $content = Get-Content -LiteralPath $HooksIni
     if ($content -match '^TestEndDateTime\s*=') {
-        $content -replace '^TestEndDateTime\s*=.*', "TestEndDateTime = $Value".TrimEnd() | Set-Content -LiteralPath $HooksIni
-        Write-Host 'TestEndDateTime updated in Hooks.ini.'
+        $content -replace '^TestEndDateTime\s*=.*', $line.Replace('$', '$$') | Set-Content -LiteralPath $HooksIni
+        Write-Host $msgs[1]
     } else {
-        Add-Content -LiteralPath $HooksIni "TestEndDateTime = $Value".TrimEnd()
-        Write-Host 'TestEndDateTime key was missing, added to Hooks.ini.'
+        Add-Content -LiteralPath $HooksIni $line
+        Write-Host $msgs[2]
     }
 }
 
