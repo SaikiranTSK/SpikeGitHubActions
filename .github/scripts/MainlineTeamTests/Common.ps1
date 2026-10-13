@@ -32,6 +32,7 @@ function Invoke-Batch([string] $Label, [string] $CommandLine, [switch] $DetectAb
 # = GetKillingCommands() of the Jenkins script.
 function Stop-TestTasks {
     Write-Host 'Killing Tasks.'
+    Write-Host 'Checking nunit*, TAFTafFVAdapterCSExeCOMServer, iCapture*, testcentric*.'
     Get-Process -ErrorAction SilentlyContinue |
         Where-Object { $_.ProcessName -like 'nunit*' -or $_.ProcessName -eq 'TAFTafFVAdapterCSExeCOMServer' -or
                        $_.ProcessName -like 'iCapture*' -or $_.ProcessName -like 'testcentric*' } |
