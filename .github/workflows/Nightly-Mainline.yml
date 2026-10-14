@@ -1,0 +1,29 @@
+name: Nightly Mainline tests
+ 
+on:
+  schedule:
+    - cron: '15 2 * * 1-5'
+      timezone: 'Asia/Kolkata'
+  workflow_dispatch:
+ 
+permissions:
+  contents: read
+ 
+jobs:
+  run-tests:
+    name: Mainline on ${{ matrix.system }}
+    strategy:
+      fail-fast: false
+      matrix:
+        system:
+          - Bhargava_BLR
+          - Technopolis6
+ 
+    uses: ./.github/workflows/MainlineTeamTests.yml
+    with:
+      SystemName: ${{ matrix.system }}
+      Branch: master
+      JobName: AcquisitionMain
+      RunAllJobs: false
+      UseInstalledPDC: true
+    secrets: inherit
