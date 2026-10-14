@@ -14,6 +14,10 @@ if ($env:SKIP_HOOKS_INI -ne 'true') {
     Set-HooksTestEndDateTime $value
 }
 
+# Jenkins parses TEST_END_TIME and checks "now" in Groovy on the Jenkins server (Amsterdam time, also for BLR PCs),
+# and prints the end time as a Java Date ("Mon Oct 12 06:00:00 CEST 2026").
+$JenkinsTimeZone = [TimeZoneInfo]::FindSystemTimeZoneById('W. Europe Standard Time')
+function Get-JenkinsNow { [TimeZoneInfo]::ConvertTimeFromUtc([DateTime]::UtcNow, $JenkinsTimeZone) }
 $endTime = $null
 if ("$env:TEST_END_TIME".Trim()) {
     $inv = [Globalization.CultureInfo]::InvariantCulture
