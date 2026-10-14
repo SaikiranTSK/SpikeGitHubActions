@@ -16,8 +16,10 @@ if ($env:SKIP_HOOKS_INI -ne 'true') {
 
 $endTime = $null
 if ("$env:TEST_END_TIME".Trim()) {
-    $endTime = [datetime]::ParseExact($env:TEST_END_TIME.Trim(), 'yyyy-MM-dd HH:mm', [Globalization.CultureInfo]::InvariantCulture)
-    Write-Host "Execution End Time: $endTime"
+    $inv = [Globalization.CultureInfo]::InvariantCulture
+    $endTime = [datetime]::ParseExact($env:TEST_END_TIME.Trim(), 'yyyy-MM-dd HH:mm', $inv)
+    $zone = if ($JenkinsTimeZone.IsDaylightSavingTime($endTime)) { 'CEST' } else { 'CET' }
+    Write-Host "Execution End Time: $($endTime.ToString('ddd MMM dd HH:mm:ss', $inv)) $zone $($endTime.Year)"
 }
 
 if ($env:RUN_ALL_JOBS -eq 'true') {
@@ -33,14 +35,16 @@ Add-Summary '|---|---|---|---|---|'
 
 foreach ($job in $jobsToRun) {
     if ($job -notmatch '^[A-Za-z0-9_\-]+$') { throw "Invalid job name '$job'." }
-    if ($null -ne $endTime -and (Get-Date) -gt $endTime) {
+    if ($null -ne $endTime -and (Get-JenkinsNow) -gt $endTime) {
         Write-Host "Skipping $job - End time reached"
         Add-Summary "| $job | - | - | - | skipped (end time) |"
         break
     }
     $start = Get-Date
     $testCode = '-'; $copyCode = '-'; $result = 'failed'
-    Write-Host "::group::Running job: $job"
+    Write-Host '======================================'
+    Write-Host "Running job: $job"
+    Write-Host '======================================'
     try {
         Invoke-Batch "Refresh Environment - $job" "`"$DataPath\GenericApproach\copy_nunit_specflow.cmd`"" | Out-Null
 
@@ -82,7 +86,6 @@ foreach ($job in $jobsToRun) {
     }
     finally {
         Stop-TestTasks
-        Write-Host '::endgroup::'
         $duration = '{0:hh\:mm\:ss}' -f ((Get-Date) - $start)
         Add-Summary "| $job | $testCode | $copyCode | $duration | $result |"
     }
