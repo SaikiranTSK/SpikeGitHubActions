@@ -1,0 +1,131 @@
+# GitHub Actions version of the live Jenkins job TestStarterDevelopment (family D).
+# Jenkins: inline pipeline script (copy: Jenkins\Batches\TestStarterDevelopment\TestStarterDevelopment.Jenkinsfile) that loads
+# <DataPath>Batches\TestStarterDevelopment\<GroovyScriptFile> (TestStarterDevelopmentStages.groovy) on the side PC.
+# Each Jenkins stage is one step with the same name, running one numbered script from .github\scripts\TestStarterDevelopment\.
+# Same 11 parameters, types and defaults as Jenkins (SystemName is a free text field there too).
+# Remote trigger (Jenkins authToken): POST /repos/{owner}/{repo}/actions/workflows/TestStarterDevelopment.yml/dispatches.
+# Docs: docs\pipelines\TestStarterDevelopment.md, docs\migration\Family-D-TestStarterDevelopment.md
+name: TestStarterDevelopment
+run-name: ${{ inputs.SystemName }}
+
+on:
+  workflow_dispatch:
+    inputs:
+      GroovyScriptFile:
+        description: Stages file in Batches\TestStarterDevelopment (only TestStarterDevelopmentStages.groovy has a PowerShell version)
+        required: false
+        type: string
+        default: TestStarterDevelopmentStages.groovy
+      Batch:
+        description: Batch (not used by the stages, as in Jenkins)
+        required: false
+        type: string
+        default: TestStarterDevelopment
+      TestsLocation:
+        description: Folder with the tests, robocopied to c:\temp\FAST\tests (the quotes are part of the Jenkins default)
+        required: false
+        type: string
+        default: '"\\nlybstqvp1ms368\misc\Lisa\FASTAcceptance\Acceptance"'
+      TestLibrary:
+        description: Test dll in C:\Temp\FAST\Tests\
+        required: false
+        type: string
+        default: FAST.SystemTests.Acceptance.dll
+      TestParameters:
+        description: NUnit 2 parameters (/include:... or /runlist:testlist.txt); converted for NUnit 3
+        required: false
+        type: string
+        default: '"/include:Test.PreLoop.Generic,Test.PreLoop.Acquisition,Test.PreLoop.Geometry,Test.Batch.Acceptance,Test.PostLoop.Generic"'
+      AssignedId:
+        description: With /runlist:testlist.txt -> /runlist:C:\Temp\FAST\Tests\<AssignedId>.txt
+        required: false
+        type: string
+        default: ''
+      SaveLocation:
+        description: Results root (<SaveLocation>\<SystemName>\<PDC>\<test>_<date>)
+        required: false
+        type: string
+        default: file://code1.emi.philips.com/storage/IGTs_Nightbatch/Nightbatch/
+      SystemName:
+        description: Side PC (runner name / label)
+        required: true
+        type: string
+        default: ''
+      Loops:
+        description: Amount of loops
+        required: false
+        type: string
+        default: '1'
+      NUnitVersion:
+        description: Not used (the NUnit version is detected from nunit.framework.dll, as in Jenkins)
+        required: false
+        type: string
+        default: NUnit 2.6.2
+      SaveScreenshotsAndVideosToLocation:
+        description: Copy the iCapture screenshots/videos to the result folder
+        required: false
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+env:
+  BATCHES_SHARE: ${{ vars.BATCHES_SHARE || '\\nlybstqvp4dt7nv\JenkinsBatches' }}
+
+jobs:
+  # Jenkins script block: loop over Jenkins.instance.nodes, error "Specified node ... not available."
+  check-runner:
+    uses: ./.github/workflows/check-runner.yml
+    with:
+      system-name: ${{ inputs.SystemName }}
+    secrets: inherit
+
+  pipeline:
+    name: TestStarterDevelopment on ${{ inputs.SystemName }}
+    needs: check-runner
+    if: ${{ !failure() && !cancelled() }}
+    runs-on: [self-hosted, Windows, '${{ inputs.SystemName }}']
+    # lock("lock_"+SystemName): no concurrency group on purpose. The side PC has one runner, so jobs for it wait in
+    # the runner queue one after the other, like the Jenkins lock queue (a concurrency group cancels pending runs).
+    # Jenkins has no timeout; Loops x a full batch can take more than a day.
+    timeout-minutes: 2880
+    defaults:
+      run:
+        shell: powershell
+    env:
+      SCRIPTS: ${{ github.workspace }}\.github\scripts\TestStarterDevelopment
+      DATA_PATH: ${{ vars.DATA_PATH || 'D:\Jenkins\' }}
+      # Jenkins env.ServerDataPath (the robocopy lines show the FQDN share)
+      SERVER_DATA_PATH: ${{ vars.SERVER_DATA_PATH || '\\nlybstqvp4dt7nv.code1.emi.philips.com\JenkinsBatches\' }}
+      RESULT_VIEWER_URL: ${{ vars.RESULT_VIEWER_URL || 'http://igts-resultviewer.ta.philips.com/#/testrun/' }}
+      SYSTEM_NAME: ${{ inputs.SystemName }}
+      GROOVY_SCRIPT_FILE: ${{ inputs.GroovyScriptFile }}
+      BATCH: ${{ inputs.Batch }}
+      TESTS_LOCATION: ${{ inputs.TestsLocation }}
+      TEST_LIBRARY: ${{ inputs.TestLibrary }}
+      TEST_PARAMETERS: ${{ inputs.TestParameters }}
+      ASSIGNED_ID: ${{ inputs.AssignedId }}
+      SAVE_LOCATION: ${{ inputs.SaveLocation }}
+      LOOPS: ${{ inputs.Loops }}
+      NUNIT_VERSION: ${{ inputs.NUnitVersion }}
+      SAVE_SCREENSHOTS_AND_VIDEOS_TO_LOCATION: ${{ inputs.SaveScreenshotsAndVideosToLocation }}
+    steps:
+      - name: Get pipeline scripts
+        uses: actions/checkout@v4
+        with:
+          sparse-checkout: .github
+
+      - name: Prepare Node
+        run: '& "$env:SCRIPTS\01__PrepareNode.ps1"'
+
+      - name: Prepare Environment
+        run: '& "$env:SCRIPTS\02__PrepareEnvironment.ps1"'
+
+      - name: Execute Tests
+        run: '& "$env:SCRIPTS\03__ExecuteTests.ps1"'
+
+      # Jenkins abort: Reset/Copy results/ELK/Killing Tasks of the current loop still run, result ABORTED.
+      - name: Execute Tests
+        if: cancelled()
+        run: '& "$env:SCRIPTS\04__ExecuteTestsAfterCancel.ps1"'
