@@ -1,0 +1,113 @@
+# Notification when a side PC runner goes offline.
+# Jenkins: an offline node keeps its builds in the queue until it is online again.
+# GitHub: the same (check-runner only warns), but nobody is told, and GitHub deletes a runner that
+# has not connected for more than 14 days (fixed, cannot be turned off).
+# Every 30 min this job keeps one open issue "Offline runners" (runner, offline since, days) and adds
+# a comment, so watchers of the issue get a mail:
+#   - once when a runner goes offline,
+#   - once when it has been offline OFFLINE_WARN_DAYS (default 10) days,
+#   - once when it is online again (and the issue is closed when all runners are online).
+# The runner API has no "last online" time, so "offline since" = first check that saw it offline.
+# Needs secret RUNNERS_READ_TOKEN (same as check-runner). Repo variable RUNNER_OFFLINE_ALERT=false turns it off.
+name: Offline runner alert
+
+on:
+  schedule:
+    - cron: '15,45 * * * *'
+  workflow_dispatch:
+
+permissions:
+  issues: write
+  contents: read
+
+concurrency:
+  group: runner-offline-alert
+  cancel-in-progress: false
+
+jobs:
+  alert:
+    name: Report offline runners
+    if: vars.RUNNER_OFFLINE_ALERT != 'false'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      GH_TOKEN: ${{ github.token }}
+      RUNNERS_TOKEN: ${{ secrets.RUNNERS_READ_TOKEN }}
+      REPO: ${{ github.repository }}
+      WARN_DAYS: ${{ vars.OFFLINE_WARN_DAYS || '10' }}
+      TITLE: Offline runners
+    steps:
+      - name: Update the "Offline runners" issue
+        run: |
+          set -euo pipefail
+          if [ -z "$RUNNERS_TOKEN" ]; then
+            echo "::warning::RUNNERS_READ_TOKEN not set, offline runner alert skipped."
+            exit 0
+          fi
+          now=$(date -u '+%Y-%m-%d %H:%M')
+          today=${now% *}
+          offline=$(GH_TOKEN="$RUNNERS_TOKEN" gh api "repos/$REPO/actions/runners" --paginate \
+            --jq '.runners[] | select(.status != "online") | .name' | sort)
+
+          num=$(gh issue list --repo "$REPO" --state open --search "\"$TITLE\" in:title" --json number,title \
+            --jq ".[] | select(.title == \"$TITLE\") | .number" | head -n1)
+          old=""
+          if [ -n "$num" ]; then old=$(gh issue view "$num" --repo "$REPO" --json body --jq .body); fi
+          # rows of the previous body: "| `name` | since | days | note |"
+          field() { printf '%s\n' "$old" | awk -F'|' -v n="\`$1\`" -v c="$2" \
+            '{ a=$2; gsub(/^ +| +$/, "", a) } a == n { v=$c; gsub(/^ +| +$/, "", v); print v; exit }'; }
+          oldnames=$(printf '%s\n' "$old" | sed -n 's/^| `\([^`]*\)` |.*/\1/p' | sort)
+
+          back=$(comm -23 <(printf '%s\n' "$oldnames" | sed '/^$/d') <(printf '%s\n' "$offline" | sed '/^$/d') \
+            | sed 's/.*/`&`/' | paste -sd, - | sed 's/,/, /g')
+
+          if [ -z "$offline" ]; then
+            echo "All runners are online."
+            if [ -n "$num" ]; then
+              gh issue close "$num" --repo "$REPO" --comment "✅ All runners are online again ($now UTC)."
+            fi
+            exit 0
+          fi
+
+          rows=""; new=""; warn=""
+          while IFS= read -r name; do
+            [ -z "$name" ] && continue
+            since=$(field "$name" 3)
+            oldnote=$(field "$name" 5)
+            if [[ ! "$since" =~ ^[0-9]{4}-[0-9]{2}-[0-9]{2} ]]; then since="$now"; new="$new \`$name\`,"; fi
+            days=$(( ( $(date -u -d "$today" +%s) - $(date -u -d "${since%% *}" +%s) ) / 86400 ))
+            note=""
+            if [ "$days" -ge "$WARN_DAYS" ]; then
+              note="⚠️ GitHub deletes it after 14 days"
+              [[ "$oldnote" == ⚠️* ]] || warn="$warn \`$name\` ($days days),"
+            fi
+            rows+="| \`$name\` | $since | $days | $note |"$'\n'
+          done <<< "$offline"
+
+          body="Runners that are **not online**. Updated every 30 min by \`runner-offline-alert.yml\` (last check $now UTC).
+          Runs for these PCs wait in the queue until the PC is online again (24 h per attempt, re-queued by \`requeue-waiting-runs.yml\`).
+
+          GitHub **deletes** a runner that has not connected for more than **14 days**; then re-install it with \`install.cmd <PC> <Token>\`.
+          To fix: switch the PC on and check that the service \`actions.runner.*\` is running.
+
+          | Runner | Offline since (UTC, first seen) | Days | Note |
+          |---|---|---|---|
+          $rows"
+          body=$(printf '%s\n' "$body" | sed 's/^          //')
+
+          if [ -n "$num" ]; then
+            gh issue edit "$num" --repo "$REPO" --body "$body" > /dev/null
+          else
+            num=$(gh issue create --repo "$REPO" --title "$TITLE" --body "$body" | grep -o '[0-9]*$')
+          fi
+          printf '%s\n' "$offline" | sed 's/^/Offline: /'
+
+          msg=""
+          [ -n "$new" ]  && msg+="🔴 Offline now:${new%,}"$'\n\n'
+          [ -n "$warn" ] && msg+="⚠️ Offline for $WARN_DAYS+ days:${warn%,}. GitHub deletes a runner after 14 days offline."$'\n\n'
+          [ -n "$back" ] && msg+="✅ Online again: $back"$'\n'
+          if [ -n "$msg" ]; then
+            echo "$msg"
+            gh issue comment "$num" --repo "$REPO" --body "$msg" > /dev/null
+          fi
+          [ -z "$warn" ] || echo "::warning::Offline for $WARN_DAYS+ days:${warn%,}"
