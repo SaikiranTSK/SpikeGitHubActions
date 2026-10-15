@@ -89,7 +89,7 @@ jobs:
     # lock("lock_"+SystemName): no concurrency group on purpose. The side PC has one runner, so jobs for it wait in
     # the runner queue one after the other, like the Jenkins lock queue (a concurrency group cancels pending runs).
     # Jenkins has no timeout; Loops x a full batch can take more than a day.
-    timeout-minutes: 2880
+    timeout-minutes: 7200
     defaults:
       run:
         shell: powershell
