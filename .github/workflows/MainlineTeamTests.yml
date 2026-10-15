@@ -196,7 +196,7 @@ jobs:
     uses: ./.github/workflows/check-runner.yml
     with:
        system-name: ${{ inputs.SystemName }}
-     secrets: inherit
+    secrets: inherit
 
   run-tests:
     name: MainlineTeamTests on ${{ inputs.SystemName }}
