@@ -1,6 +1,7 @@
 # Reusable pre-check, replaces the Jenkins script block that loops over Jenkins.instance.nodes
 # and fails with "Specified node ... not available".
 # Without it a job for a system without runner just stays Queued.
+# Same as Jenkins: no runner with that name -> fail; runner offline -> warning only, the run waits in the queue.
 # Needs secret RUNNERS_READ_TOKEN (fine-grained PAT, repo "Administration: read"); if the secret is
 # missing the check is skipped with a warning. Set repo variable RUNNER_CHECK=false to skip the job.
 name: check-runner
@@ -33,14 +34,16 @@ jobs:
             echo "::warning::RUNNERS_READ_TOKEN not set, runner check skipped."
             exit 0
           fi
+          # Match by runner name, or by label (e.g. 2 runners AlanTuring-1/-2 with label AlanTuring).
           status=$(gh api "repos/$REPO/actions/runners" --paginate \
-            --jq ".runners[] | select(.name == \"$SYSTEM_NAME\") | .status")
+            --jq ".runners[] | select(.name == \"$SYSTEM_NAME\" or any(.labels[]; .name == \"$SYSTEM_NAME\")) | .status")
           if [ -z "$status" ]; then
             echo "::error::Specified system '$SYSTEM_NAME' has no runner. Install it with GitHub-Runner-Client."
             exit 1
           fi
-          if [ "$status" != "online" ]; then
-            echo "::error::Runner '$SYSTEM_NAME' is $status."
-            exit 1
+          # Jenkins only checks that the node exists; an offline node makes the run wait in the queue.
+          if ! grep -qx online <<< "$status"; then
+            echo "::warning::Runner '$SYSTEM_NAME' is offline. The run waits in the queue until the PC is online (GitHub cancels it after 24 h)."
+            exit 0
           fi
           echo "Runner '$SYSTEM_NAME' is online."
