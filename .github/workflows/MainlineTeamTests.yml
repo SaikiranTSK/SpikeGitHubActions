@@ -192,16 +192,16 @@ env:
   BATCHES_SHARE: ${{ vars.BATCHES_SHARE || '\\nlybstqvp4dt7nv\JenkinsBatches' }}
 
 jobs:
-  check-runner:
-    uses: ./.github/workflows/check-runner.yml
-    with:
-      system-name: ${{ inputs.SystemName }}
-    secrets: inherit
+  # check-runner:
+  #   uses: ./.github/workflows/check-runner.yml
+  #   with:
+  #     system-name: ${{ inputs.SystemName }}
+  #   secrets: inherit
 
   run-tests:
     name: MainlineTeamTests on ${{ inputs.SystemName }}
-    needs: check-runner
-    if: ${{ !failure() && !cancelled() }}
+    # needs: check-runner
+    # if: ${{ !failure() && !cancelled() }}
     runs-on: [self-hosted, Windows, '${{ inputs.SystemName }}']
     # lock(resource: "lock_" + SystemName): no concurrency group on purpose. The side PC has one runner, so jobs for it
     # wait in the runner queue one after the other, like the Jenkins lock queue. A concurrency group would keep only
