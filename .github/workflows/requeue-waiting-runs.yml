@@ -1,0 +1,51 @@
+# Jenkins waits in the queue until the node is online, with no time limit.
+# GitHub cancels a job that waits more than 24 h for a self-hosted runner (fixed limit, not configurable).
+# This watchdog re-runs such runs, so they go back into the queue and keep waiting for the PC.
+# A queue-timeout cancel is recognised as: job cancelled, never got a runner, and waited >= 23 h.
+# A run cancelled by a person (earlier than 23 h, or after it started) is never re-run.
+# GitHub allows re-runs up to 30 days after the first run, so the total wait is at most 30 days.
+# Repo variable MAX_QUEUE_DAYS (default 30) sets a shorter maximum wait: older runs stay cancelled.
+name: Re-queue runs cancelled by the 24h limit
+
+on:
+  schedule:
+    - cron: '*/30 * * * *'
+  workflow_dispatch:
+
+permissions:
+  actions: write
+  contents: read
+
+jobs:
+  requeue:
+    name: Re-queue waiting runs
+    if: vars.REQUEUE_WAITING_RUNS != 'false'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      GH_TOKEN: ${{ github.token }}
+      REPO: ${{ github.repository }}
+      MAX_QUEUE_DAYS: ${{ vars.MAX_QUEUE_DAYS || '30' }}
+    steps:
+      - name: Re-run runs whose job timed out in the queue
+        run: |
+          set -euo pipefail
+          # created_at stays the first-attempt time, so look back 31 days (GitHub re-run limit is 30 days);
+          # updated_at changes when an attempt is cancelled, so only check runs cancelled in the last 2 days.
+          since=$(date -u -d '-31 days' +%Y-%m-%d)
+          gh api "repos/$REPO/actions/runs?status=cancelled&created=>=$since&per_page=100" --paginate \
+            --jq '.workflow_runs[] | select((.updated_at|fromdateiso8601) >= (now - 172800))
+                  | select((.created_at|fromdateiso8601) >= (now - ('"$MAX_QUEUE_DAYS"' * 86400)))
+                  | "\(.id) \(.run_attempt) \(.name)"' |
+          while read -r id attempt name; do
+            # jobs of the latest attempt that were cancelled before any runner picked them up
+            timedout=$(gh api "repos/$REPO/actions/runs/$id/attempts/$attempt/jobs?per_page=100" --jq '
+              [.jobs[] | select(.conclusion=="cancelled" and (.runner_name // "") == ""
+                 and .completed_at != null and .created_at != null)
+               | select(((.completed_at|fromdateiso8601) - (.created_at|fromdateiso8601)) >= 82800)] | length')
+            if [ "$timedout" -gt 0 ]; then
+              echo "::notice::Re-queue '$name' run $id (attempt $attempt): waited 24 h for its PC"
+              gh run rerun "$id" --failed -R "$REPO" || echo "::warning::could not re-run $id"
+            fi
+          done
+          echo "Done."
