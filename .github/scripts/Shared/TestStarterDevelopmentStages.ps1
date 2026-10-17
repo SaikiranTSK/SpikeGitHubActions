@@ -35,8 +35,6 @@ $testLibraryFolder = if ($env:TSD_TESTS_FOLDER) { $env:TSD_TESTS_FOLDER } else {
 # robocopy target of TestsLocation in StartStage_PrepareEnvironment (hard-coded lower case in the groovy file)
 $TSDTestsCopyTarget = if ($env:TSD_TESTS_FOLDER) { $env:TSD_TESTS_FOLDER.TrimEnd('\') } else { 'c:\temp\FAST\tests' }
 $nunitOutputFolder = "$TSDResultsFolder\TestOutput"
-$global:majorVersion = ''
-$global:nunitExecutable = ''
 
 # TriggerStagePipeline(): _buildFailed = false; _uploadToELK = false; _buildAborted = false; _pdc = "0.0.0"
 $global:_buildFailed = ($env:TSD_BUILD_FAILED -eq 'true')
@@ -45,6 +43,8 @@ $global:_notBuilt = ($env:TSD_NOT_BUILT -eq 'true')
 $global:_uploadToELK = $false
 $global:_pdc = '0.0.0'
 $global:_lastNightbatchLocation = ''
+$global:majorVersion = if ($env:TSD_MAJOR_VERSION) { $env:TSD_MAJOR_VERSION } else { '' }
+$global:nunitExecutable = if ($env:TSD_NUNIT_EXECUTABLE) { $env:TSD_NUNIT_EXECUTABLE } else { '' }
 $_systemName = $env:SYSTEM_NAME
 
 function Set-TsdState([string] $Name, [string] $Value) {
@@ -75,8 +75,6 @@ function Get-TsdDescription {
 
 function StartStage_ExecuteTests {
     PrintHeader 'STAGE EXECUTE TESTS'
-    # Marker for the 'if: cancelled()' step (Jenkins abort: the rest of the loop still runs)
-    if ($env:RUNNER_TEMP) { Set-Content -LiteralPath (Join-Path $env:RUNNER_TEMP 'tsd_execute_started') -Value '' }
     # (env.Loops as Integer): a non-number fails the stage
     $loopsAmount = [int]::Parse($env:LOOPS) + 1
     for ($loopNr = 1; $loopNr -lt $loopsAmount; $loopNr++) {
@@ -100,15 +98,28 @@ function StartStage_ExecuteTests {
 
 # Jenkins abort (Stop button / REST stop): the running bat is interrupted, catchError in ExecuteCommand catches it,
 # and the loop body continues (RunResetTest, CopyResultsToNightbatch, UploadToELK, Killing Tasks, "Build result: ABORTED").
-# In GitHub a cancel kills the step, so the step 'Execute Tests' with if: cancelled() runs this.
+# In GitHub a cancel kills the step, so its dedicated cancelled-step handler runs this cleanup.
 function StartStage_ExecuteTestsAfterCancel {
-    $marker = if ($env:RUNNER_TEMP) { Join-Path $env:RUNNER_TEMP 'tsd_execute_started' } else { '' }
-    if (-not $marker -or -not (Test-Path -LiteralPath $marker)) {
-        Write-Host 'Run cancelled before stage Execute Tests; nothing to clean up.'
-        return
-    }
+    # The workflow only invokes this after Execute Tests was cancelled. Persist the abort
+    # state here because GitHub terminates the cancelled step before it can save it.
+    $global:_buildFailed = $true
+    $global:_buildAborted = $true
+    Set-TsdState 'TSD_BUILD_FAILED' 'true'
+    Set-TsdState 'TSD_BUILD_ABORTED' 'true'
+
     try {
-        RunResetTest
+        if (-not $global:majorVersion -or -not $global:nunitExecutable) {
+            try {
+                InitializeNunitSettings
+            } catch {
+                Write-Host "::warning::Unable to determine NUnit settings for cancelled-build reset: $($_.Exception.Message)"
+            }
+        }
+        if ($global:majorVersion -and $global:nunitExecutable) {
+            RunResetTest
+        } else {
+            Write-Host '::warning::Skipping reset test because NUnit settings are unavailable.'
+        }
         CopyResultsToNightbatch
         UploadToELK
     } finally {
@@ -120,25 +131,7 @@ function StartStage_ExecuteTestsAfterCancel {
 function StartTest {
     PrintHeader 'EXECUTE TEST'
     $testParameters = $env:TEST_PARAMETERS
-    # Detect NUnit version from nunit.framework.dll (bat returnStdout: a non-zero exit code fails the stage)
-    $nunitDllPath = "$($testLibraryFolder)nunit.framework.dll"
-    $out = @(powershell -NoProfile -Command "(Get-Item '$nunitDllPath').VersionInfo.ProductVersion" | ForEach-Object { "$_" })
-    $rc = $LASTEXITCODE
-    $global:LASTEXITCODE = 0
-    if ($rc -ne 0) { throw "script returned exit code $rc" }
-    # Extract only the first line that looks like a version
-    $nunitVersion = $out | Where-Object { $_ -match '^\d+(\.\d+)+.*$' } | Select-Object -First 1
-    if (-not $nunitVersion) { $nunitVersion = '' }
-    Write-Host "Detected NUnit framework DLL version: $nunitVersion"
-    $global:majorVersion = if ($nunitVersion) { ($nunitVersion.Split('.') | Where-Object { $_ -ne '' })[0] } else { '' }
-    Write-Host "Major version: $global:majorVersion"
-    if ($global:majorVersion -eq '2') {
-        $global:nunitExecutable = $TSDDataPath + 'Packages\NUnit 2.6.2\bin\nunit-console-x86.exe'
-    } elseif ($global:majorVersion -eq '3') {
-        $global:nunitExecutable = $TSDDataPath + 'Packages\NUnit.org\nunit-console\nunit3-console.exe'
-    } else {
-        throw "[ERROR] Unsupported NUnit version: $global:majorVersion"
-    }
+    InitializeNunitSettings
     if ($env:TEST_PARAMETERS.Contains('/runlist:testlist.txt')) {
         Write-Host 'Updating TestParameters...'
         $testParameters = '/runlist:' + $testLibraryFolder
@@ -167,6 +160,30 @@ function StartTest {
     Write-Host $commandData
     Write-TsdFile "$($TSDDataPath)command.cmd" $commandData
     [void](ExecuteCommand 'Cleanup and then start test' "$($TSDDataPath)command.cmd")
+}
+
+function InitializeNunitSettings {
+    # Detect NUnit version from nunit.framework.dll (bat returnStdout: a non-zero exit code fails the stage)
+    $nunitDllPath = "$($testLibraryFolder)nunit.framework.dll"
+    $out = @(powershell -NoProfile -Command "(Get-Item '$nunitDllPath').VersionInfo.ProductVersion" | ForEach-Object { "$_" })
+    $rc = $LASTEXITCODE
+    $global:LASTEXITCODE = 0
+    if ($rc -ne 0) { throw "script returned exit code $rc" }
+    # Extract only the first line that looks like a version
+    $nunitVersion = $out | Where-Object { $_ -match '^\d+(\.\d+)+.*$' } | Select-Object -First 1
+    if (-not $nunitVersion) { $nunitVersion = '' }
+    Write-Host "Detected NUnit framework DLL version: $nunitVersion"
+    $global:majorVersion = if ($nunitVersion) { ($nunitVersion.Split('.') | Where-Object { $_ -ne '' })[0] } else { '' }
+    Write-Host "Major version: $global:majorVersion"
+    if ($global:majorVersion -eq '2') {
+        $global:nunitExecutable = $TSDDataPath + 'Packages\NUnit 2.6.2\bin\nunit-console-x86.exe'
+    } elseif ($global:majorVersion -eq '3') {
+        $global:nunitExecutable = $TSDDataPath + 'Packages\NUnit.org\nunit-console\nunit3-console.exe'
+    } else {
+        throw "[ERROR] Unsupported NUnit version: $global:majorVersion"
+    }
+    Set-TsdState 'TSD_MAJOR_VERSION' $global:majorVersion
+    Set-TsdState 'TSD_NUNIT_EXECUTABLE' $global:nunitExecutable
 }
 
 function StartStage_PrepareEnvironment {
