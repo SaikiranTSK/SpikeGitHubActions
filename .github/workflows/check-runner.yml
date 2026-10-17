@@ -19,7 +19,7 @@ on:
 
 jobs:
   check-runner:
-    name: Check runner ${{ inputs.system-name }} is available
+    name: Check runner ${{ inputs.system-name }} availability
     if: vars.RUNNER_CHECK != 'false'
     runs-on: ubuntu-latest
     timeout-minutes: 5
