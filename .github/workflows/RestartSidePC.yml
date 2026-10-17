@@ -13,6 +13,10 @@ on:
         required: true
         type: string
         default: RestartSidePC
+      RunAt:
+        description: "Optional UTC time (yyyy-MM-ddTHH:mm:ssZ); blank or past runs immediately. Waiting counts toward the 24-hour job timeout."
+        required: false
+        type: string
 
 permissions:
   contents: read
@@ -40,6 +44,32 @@ jobs:
       SYSTEM_NAME: ${{ inputs.SystemName }}
       BATCH: ${{ inputs.Batch }}
     steps:
+      - name: Wait until RunAt (UTC)
+        env:
+          RUN_AT: ${{ inputs.RunAt }}
+        run: |
+          if ([string]::IsNullOrEmpty($env:RUN_AT)) {
+            Write-Host "RunAt not provided; continuing immediately."
+            return
+          }
+
+          $target = [datetimeoffset]::MinValue
+          $styles = [System.Globalization.DateTimeStyles]::AssumeUniversal -bor [System.Globalization.DateTimeStyles]::AdjustToUniversal
+          if (-not [datetimeoffset]::TryParseExact(
+            $env:RUN_AT,
+            "yyyy-MM-dd'T'HH:mm:ss'Z'",
+            [System.Globalization.CultureInfo]::InvariantCulture,
+            $styles,
+            [ref]$target
+          )) {
+            throw "Invalid RunAt. Use UTC format yyyy-MM-ddTHH:mm:ssZ (example: 2026-10-17T18:30:00Z)."
+          }
+
+          Write-Host "Waiting until $($target.ToString('u')) (UTC), if still in the future."
+          while (($remaining = ($target - [datetimeoffset]::UtcNow).TotalSeconds) -gt 0) {
+            Start-Sleep -Seconds ([int][math]::Min(60.0, [math]::Ceiling($remaining)))
+          }
+
       - name: Get pipeline scripts
         uses: actions/checkout@v4
         with:
