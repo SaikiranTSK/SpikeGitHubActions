@@ -17,22 +17,22 @@ on:
         type: string
         default: TestStarterDevelopmentStages.groovy
       Batch:
-        description: Batch (not used by the stages, as in Jenkins)
+        description: Batch that will be run
         required: false
         type: string
         default: TestStarterDevelopment
       TestsLocation:
-        description: Folder with the tests, robocopied to c:\temp\FAST\tests (the quotes are part of the Jenkins default)
+        description: Location (folder) of tests to be run
         required: false
         type: string
         default: '"\\nlybstqvp1ms368\misc\Lisa\FASTAcceptance\Acceptance"'
       TestLibrary:
-        description: Test dll in C:\Temp\FAST\Tests\
+        description: Name of the dll (including the .dll)
         required: false
         type: string
         default: FAST.SystemTests.Acceptance.dll
       TestParameters:
-        description: NUnit 2 parameters (/include:... or /runlist:testlist.txt); converted for NUnit 3
+        description: Parameters for the test to be run (for example "/include:Test.PreLoop.Generic,Test.PreLoop.Acquisition,Test.PreLoop.Geometry,Test.Batch,Test.PostLoop.Generic")
         required: false
         type: string
         default: '"/include:Test.PreLoop.Generic,Test.PreLoop.Acquisition,Test.PreLoop.Geometry,Test.Batch.Acceptance,Test.PostLoop.Generic"'
@@ -42,27 +42,27 @@ on:
         type: string
         default: ''
       SaveLocation:
-        description: Results root (<SaveLocation>\<SystemName>\<PDC>\<test>_<date>)
+        description: Copy to Nightbatch Location
         required: false
         type: string
         default: file://code1.emi.philips.com/storage/IGTs_Nightbatch/Nightbatch/
       SystemName:
-        description: Side PC (runner name / label)
+        description: The system on which you would like to run on.(Runner Name)
         required: true
         type: string
         default: ''
       Loops:
-        description: Amount of loops
+        description: Amount of loops to apply at the test
         required: false
         type: string
         default: '1'
       NUnitVersion:
-        description: Not used (the NUnit version is detected from nunit.framework.dll, as in Jenkins)
+        description: Not used (the NUnit version is detected from nunit.framework.dll)
         required: false
         type: string
         default: NUnit 2.6.2
       SaveScreenshotsAndVideosToLocation:
-        description: Copy the iCapture screenshots/videos to the result folder
+        description: Optional. If required, captured images/videos are also copied to the saveLocation value.
         required: false
         type: boolean
         default: false
