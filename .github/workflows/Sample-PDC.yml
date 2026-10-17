@@ -1,0 +1,116 @@
+name: Sample PDC Installation
+
+on:
+  workflow_dispatch:
+    inputs:
+
+      SystemName:
+        description: "Target Side PC"
+        required: true
+        type: choice
+        options:
+          - Bhargava_BLR
+          - Corneille
+          - AntonPieck
+
+      Branch:
+        description: "Branch"
+        required: true
+        type: string
+        default: "master"
+
+      Config:
+        description: "Configuration file"
+        required: true
+        type: choice
+        options:
+          - default
+        default: default
+
+      Overrides:
+        description: 'Optional JSON overrides, e.g. {"Backup":true}'
+        required: false
+        type: string
+        default: "{}"
+
+jobs:
+
+  prepare:
+    name: Resolve parameters
+    runs-on: ubuntu-latest
+
+    outputs:
+      config: ${{ steps.config.outputs.config }}
+
+    steps:
+
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Load defaults and apply overrides
+        id: config
+        shell: pwsh
+        run: |
+          $file = ".github/config/PdcInstallation/${{ inputs.Config }}.json"
+
+          if (-not (Test-Path $file)) {
+              throw "Configuration not found: $file"
+          }
+
+          $defaults = Get-Content $file -Raw | ConvertFrom-Json
+          $overrides = '${{ inputs.Overrides }}' | ConvertFrom-Json
+
+          foreach ($property in $overrides.PSObject.Properties) {
+              if (-not ($defaults.PSObject.Properties.Name -contains $property.Name)) {
+                  throw "Unknown override: $($property.Name)"
+              }
+
+              $defaults.$($property.Name) = $property.Value
+          }
+
+          # Explicit UI value wins over the JSON default.
+          $defaults.Branch = "${{ inputs.Branch }}"
+
+          $json = $defaults | ConvertTo-Json -Compress
+
+          "config=$json" >> $env:GITHUB_OUTPUT
+
+          Write-Host "Configuration successfully validated."
+
+  run-pdc:
+    name: PDC on ${{ inputs.SystemName }}
+    needs: prepare
+
+    runs-on:
+      - self-hosted
+      - Windows
+      - ${{ inputs.SystemName }}
+
+    env:
+      SYSTEM_NAME: ${{ inputs.SystemName }}
+      PDC_CONFIG: ${{ needs.prepare.outputs.config }}
+
+    steps:
+
+      - name: Show resolved configuration
+        shell: powershell
+        run: |
+          $config = $env:PDC_CONFIG | ConvertFrom-Json
+
+          Write-Host "SystemName: $env:SYSTEM_NAME"
+          Write-Host "Branch: $($config.Branch)"
+          Write-Host "Backup: $($config.Backup)"
+          Write-Host "Restore: $($config.Restore)"
+          Write-Host "InstallSoftware: $($config.InstallSoftware)"
+
+      - name: Run PDC installation
+        shell: powershell
+        run: |
+          $config = $env:PDC_CONFIG | ConvertFrom-Json
+
+          # Example access:
+          Write-Host "Running PDC installation..."
+          Write-Host "Branch = $($config.Branch)"
+          Write-Host "InstallationType = $($config.InstallationType)"
+
+          # Call your real migrated PDC PowerShell script here.

@@ -13,6 +13,10 @@ on:
         required: true
         type: string
         default: RestartSidePC
+      RunAt:
+        description: "Optional UTC time (yyyy-MM-ddTHH:mm:ssZ), e.g. 2026-10-17T18:30:00Z; blank or past runs immediately. Max wait is about 5.5 hours."
+        required: false
+        type: string
 
 permissions:
   contents: read
@@ -21,7 +25,39 @@ env:
   BATCHES_SHARE: ${{ vars.BATCHES_SHARE || '\\nlybstqvp4dt7nv\JenkinsBatches' }}
 
 jobs:
+  wait-until:
+    if: ${{ inputs.RunAt != '' }}
+    runs-on: ubuntu-latest
+    permissions: {}
+    timeout-minutes: 360
+    steps:
+      - name: Wait until RunAt (UTC)
+        shell: bash
+        env:
+          RUN_AT: ${{ inputs.RunAt }}
+        run: |
+          if [[ ! "$RUN_AT" =~ ^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}Z$ ]] ||
+             ! target=$(date -u -d "$RUN_AT" +%s 2>/dev/null); then
+            echo "::error::Invalid RunAt. Use UTC format yyyy-MM-ddTHH:mm:ssZ (example: 2026-10-17T18:30:00Z)."
+            exit 1
+          fi
+
+          delay=$((target - $(date -u +%s)))
+          if (( delay > 19800 )); then
+            echo "::error::RunAt must be no more than 5.5 hours in the future."
+            exit 1
+          fi
+
+          if (( delay > 0 )); then
+            echo "Waiting $delay seconds until $RUN_AT (UTC)."
+            sleep "$delay"
+          else
+            echo "RunAt is in the past; continuing immediately."
+          fi
+
   check-runner:
+    needs: wait-until
+    if: ${{ !failure() && !cancelled() && (needs.wait-until.result == 'success' || needs.wait-until.result == 'skipped') }}
     uses: ./.github/workflows/check-runner.yml
     with:
       system-name: ${{ inputs.SystemName }}
