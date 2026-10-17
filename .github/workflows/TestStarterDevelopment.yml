@@ -124,8 +124,3 @@ jobs:
 
       - name: Execute Tests
         run: '& "$env:SCRIPTS\03__ExecuteTests.ps1"'
-
-      # Jenkins abort: Reset/Copy results/ELK/Killing Tasks of the current loop still run, result ABORTED.
-      - name: Execute Tests
-        if: cancelled()
-        run: '& "$env:SCRIPTS\04__ExecuteTestsAfterCancel.ps1"'
