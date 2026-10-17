@@ -14,7 +14,7 @@ on:
         type: string
         default: RestartSidePC
       RunAt:
-        description: "Optional UTC time (yyyy-MM-ddTHH:mm:ssZ); blank or past runs immediately. Waiting counts toward the 24-hour job timeout."
+        description: "Optional UTC time (yyyy-MM-ddTHH:mm:ssZ), e.g. 2026-10-17T18:30:00Z; blank or past runs immediately. Max wait is about 5.5 hours."
         required: false
         type: string
 
@@ -25,7 +25,39 @@ env:
   BATCHES_SHARE: ${{ vars.BATCHES_SHARE || '\\nlybstqvp4dt7nv\JenkinsBatches' }}
 
 jobs:
+  wait-until:
+    if: ${{ inputs.RunAt != '' }}
+    runs-on: ubuntu-latest
+    permissions: {}
+    timeout-minutes: 360
+    steps:
+      - name: Wait until RunAt (UTC)
+        shell: bash
+        env:
+          RUN_AT: ${{ inputs.RunAt }}
+        run: |
+          if [[ ! "$RUN_AT" =~ ^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}Z$ ]] ||
+             ! target=$(date -u -d "$RUN_AT" +%s 2>/dev/null); then
+            echo "::error::Invalid RunAt. Use UTC format yyyy-MM-ddTHH:mm:ssZ (example: 2026-10-17T18:30:00Z)."
+            exit 1
+          fi
+
+          delay=$((target - $(date -u +%s)))
+          if (( delay > 19800 )); then
+            echo "::error::RunAt must be no more than 5.5 hours in the future."
+            exit 1
+          fi
+
+          if (( delay > 0 )); then
+            echo "Waiting $delay seconds until $RUN_AT (UTC)."
+            sleep "$delay"
+          else
+            echo "RunAt is in the past; continuing immediately."
+          fi
+
   check-runner:
+    needs: wait-until
+    if: ${{ !failure() && !cancelled() && (needs.wait-until.result == 'success' || needs.wait-until.result == 'skipped') }}
     uses: ./.github/workflows/check-runner.yml
     with:
       system-name: ${{ inputs.SystemName }}
@@ -44,32 +76,6 @@ jobs:
       SYSTEM_NAME: ${{ inputs.SystemName }}
       BATCH: ${{ inputs.Batch }}
     steps:
-      - name: Wait until RunAt (UTC)
-        env:
-          RUN_AT: ${{ inputs.RunAt }}
-        run: |
-          if ([string]::IsNullOrEmpty($env:RUN_AT)) {
-            Write-Host "RunAt not provided; continuing immediately."
-            return
-          }
-
-          $target = [datetimeoffset]::MinValue
-          $styles = [System.Globalization.DateTimeStyles]::AssumeUniversal -bor [System.Globalization.DateTimeStyles]::AdjustToUniversal
-          if (-not [datetimeoffset]::TryParseExact(
-            $env:RUN_AT,
-            "yyyy-MM-dd'T'HH:mm:ss'Z'",
-            [System.Globalization.CultureInfo]::InvariantCulture,
-            $styles,
-            [ref]$target
-          )) {
-            throw "Invalid RunAt. Use UTC format yyyy-MM-ddTHH:mm:ssZ (example: 2026-10-17T18:30:00Z)."
-          }
-
-          Write-Host "Waiting until $($target.ToString('u')) (UTC), if still in the future."
-          while (($remaining = ($target - [datetimeoffset]::UtcNow).TotalSeconds) -gt 0) {
-            Start-Sleep -Seconds ([int][math]::Min(60.0, [math]::Ceiling($remaining)))
-          }
-
       - name: Get pipeline scripts
         uses: actions/checkout@v4
         with:
