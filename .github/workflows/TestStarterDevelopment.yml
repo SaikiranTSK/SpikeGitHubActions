@@ -74,7 +74,7 @@ env:
   BATCHES_SHARE: ${{ vars.BATCHES_SHARE || '\\nlybstqvp4dt7nv\JenkinsBatches' }}
 
 jobs:
-  # Jenkins script block: loop over Jenkins.instance.nodes, error "Specified node ... not available."
+  # It will check the Runner was Online."
   check-runner:
     uses: ./.github/workflows/check-runner.yml
     with:
