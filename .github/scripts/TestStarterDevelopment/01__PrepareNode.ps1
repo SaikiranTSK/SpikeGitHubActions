@@ -25,11 +25,11 @@ PrintStageHeader 'PREPARE NODE'
 [void](Invoke-Bat 'Kill' 'taskkill /F /IM RunInCurrentUser.exe')
 CopyFile ($TSDJenkinsBatchesPath + 'Tools\RunAsCurrentUser.exe') ($TSDDataPath + 'Tools\RunAsCurrentUser.exe')
 CopyFile ($TSDJenkinsBatchesPath + 'Tools\RunInCurrentUser.exe') ($TSDDataPath + 'Tools\RunInCurrentUser.exe')
-CopyFile ($TSDJenkinsBatchesPath + "Batches\TestStarterDevelopment\$env:GROOVY_SCRIPT_FILE") ($TSDDataPath + "Batches\TestStarterDevelopment\$env:GROOVY_SCRIPT_FILE")
-Write-Host "Loading groovy file: $($TSDDataPath)Batches\TestStarterDevelopment\$env:GROOVY_SCRIPT_FILE"
-if ($SupportedGroovyScriptFiles -notcontains $env:GROOVY_SCRIPT_FILE) {
-    throw "GroovyScriptFile '$env:GROOVY_SCRIPT_FILE' has no PowerShell version (supported: $($SupportedGroovyScriptFiles -join ', '))."
-}
+# CopyFile ($TSDJenkinsBatchesPath + "Batches\TestStarterDevelopment\$env:GROOVY_SCRIPT_FILE") ($TSDDataPath + "Batches\TestStarterDevelopment\$env:GROOVY_SCRIPT_FILE")
+# Write-Host "Loading groovy file: $($TSDDataPath)Batches\TestStarterDevelopment\$env:GROOVY_SCRIPT_FILE"
+#if ($SupportedGroovyScriptFiles -notcontains $env:GROOVY_SCRIPT_FILE) {
+   # throw "GroovyScriptFile '$env:GROOVY_SCRIPT_FILE' has no PowerShell version (supported: $($SupportedGroovyScriptFiles -join ', '))."
+#}
 # loadedStages.TriggerStagePipeline() -> next steps 'Prepare Environment' and 'Execute Tests'
 $global:LASTEXITCODE = 0
 exit 0
