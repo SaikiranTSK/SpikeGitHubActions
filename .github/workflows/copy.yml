@@ -1,0 +1,15 @@
+name: Copy Jenkins Tools
+
+on:
+  workflow_dispatch:
+
+jobs:
+  copy:
+    runs-on: [self-hosted, Windows]
+    steps:
+      - name: Copy Tools
+        shell: powershell
+        run: |
+          robocopy '\\nlybstqvp4dt7nv.code1.emi.philips.com\JenkinsBatches\Tools' 'D:\Jenkins\Tools' /E /R:2 /W:5
+          if ($LASTEXITCODE -ge 8) { exit $LASTEXITCODE }
+          exit 0
