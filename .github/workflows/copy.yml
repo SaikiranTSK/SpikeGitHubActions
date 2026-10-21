@@ -2,10 +2,15 @@ name: Copy Jenkins Tools
 
 on:
   workflow_dispatch:
+    inputs:
+      system_name:
+        description: Windows runner label for the target system
+        required: true
+        type: string
 
 jobs:
   copy:
-    runs-on: [self-hosted, Windows]
+    runs-on: [self-hosted, Windows, "${{ inputs.system_name }}"]
     steps:
       - name: Copy Tools
         shell: powershell
