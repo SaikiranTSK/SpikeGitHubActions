@@ -21,7 +21,7 @@ on:
         description: Location (folder) of tests to be run
         required: false
         type: string
-        default: '"\\nlybstqvp1ms368\misc\Lisa\FASTAcceptance\Acceptance"'
+        default: '"\\ingbtcpic5DT152\d\raja\Acceptance"'
       TestLibrary:
         description: Name of the dll (including the .dll)
         required: false
