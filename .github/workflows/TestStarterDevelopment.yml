@@ -11,11 +11,6 @@ run-name: ${{ inputs.SystemName }}
 on:
   workflow_dispatch:
     inputs:
-      GroovyScriptFile:
-        description: Stages file in Batches\TestStarterDevelopment (only TestStarterDevelopmentStages.groovy has a PowerShell version)
-        required: false
-        type: string
-        default: TestStarterDevelopmentStages.groovy
       Batch:
         description: Batch that will be run
         required: false
@@ -100,7 +95,6 @@ jobs:
       SERVER_DATA_PATH: ${{ vars.SERVER_DATA_PATH || '\\nlybstqvp4dt7nv.code1.emi.philips.com\JenkinsBatches\' }}
       RESULT_VIEWER_URL: ${{ vars.RESULT_VIEWER_URL || 'http://igts-resultviewer.ta.philips.com/#/testrun/' }}
       SYSTEM_NAME: ${{ inputs.SystemName }}
-      GROOVY_SCRIPT_FILE: ${{ inputs.GroovyScriptFile }}
       BATCH: ${{ inputs.Batch }}
       TESTS_LOCATION: ${{ inputs.TestsLocation }}
       TEST_LIBRARY: ${{ inputs.TestLibrary }}
