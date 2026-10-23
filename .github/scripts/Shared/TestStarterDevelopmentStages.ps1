@@ -95,38 +95,6 @@ function StartStage_ExecuteTests {
     }
 }
 
-# Jenkins abort (Stop button / REST stop): the running bat is interrupted, catchError in ExecuteCommand catches it,
-# and the loop body continues (RunResetTest, CopyResultsToNightbatch, UploadToELK, Killing Tasks, "Build result: ABORTED").
-# In GitHub a cancel kills the step, so its dedicated cancelled-step handler runs this cleanup.
-function StartStage_ExecuteTestsAfterCancel {
-    # The workflow only invokes this after Execute Tests was cancelled. Persist the abort
-    # state here because GitHub terminates the cancelled step before it can save it.
-    $global:_buildFailed = $true
-    $global:_buildAborted = $true
-    Set-TsdState 'TSD_BUILD_FAILED' 'true'
-    Set-TsdState 'TSD_BUILD_ABORTED' 'true'
-
-    try {
-        if (-not $global:majorVersion -or -not $global:nunitExecutable) {
-            try {
-                InitializeNunitSettings
-            } catch {
-                Write-Host "::warning::Unable to determine NUnit settings for cancelled-build reset: $($_.Exception.Message)"
-            }
-        }
-        if ($global:majorVersion -and $global:nunitExecutable) {
-            RunResetTest
-        } else {
-            Write-Host '::warning::Skipping reset test because NUnit settings are unavailable.'
-        }
-        CopyResultsToNightbatch
-        UploadToELK
-    } finally {
-        [void](Invoke-BatScript 'Killing Tasks' ((GetKillingCommands) + "exit /B 0`n"))
-    }
-    Write-Host 'Build result: ABORTED'
-}
-
 function StartTest {
     PrintHeader 'EXECUTE TEST'
     $testParameters = $env:TEST_PARAMETERS
