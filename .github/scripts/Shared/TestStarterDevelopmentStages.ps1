@@ -8,24 +8,23 @@
 #   currentBuild.currentResult    -> NOT_BUILT only when a catchError in ExecuteCommand caught an error (TSD_NOT_BUILT)
 #   currentBuild.description      -> line in the job summary
 #   UploadToELK()                 -> _uploadToELK is always false in the groovy file, so only the 'Skip uploading' line runs
-# Inputs from env: DATA_PATH (env.DataPath, default D:\Jenkins\), SERVER_DATA_PATH (env.ServerDataPath),
-# JENKINS_BATCHES_PATH (env.JenkinsBatchesPath), both default BATCHES_SHARE + '\', RESULT_VIEWER_URL (env.ResultViewerURL),
+# Tooling comes from the checkout's .github\Tools and .github\Packages; generated scripts use RUNNER_TEMP.
+# Inputs from env: GITHUB_WORKSPACE, RUNNER_TEMP (TEMP outside Actions), RESULT_VIEWER_URL (env.ResultViewerURL),
 # SYSTEM_NAME, TESTS_LOCATION, TEST_LIBRARY, TEST_PARAMETERS, ASSIGNED_ID, SAVE_LOCATION, LOOPS,
 # SAVE_SCREENSHOTS_AND_VIDEOS_TO_LOCATION.
 # TSD_TESTS_FOLDER / TSD_TRACING_FOLDER / TSD_RESULTS_FOLDER only exist for local tests (hard-coded in the groovy file).
 
 if (-not (Get-Command Invoke-Bat -ErrorAction SilentlyContinue)) { . "$PSScriptRoot\functions.ps1" }
 
-function Get-TsdPath([string] $Value, [string] $Default) {
-    $p = if ($Value) { $Value } else { $Default }
-    if (-not $p.EndsWith('\')) { $p += '\' }
-    return $p
+$TSDRepositoryPath = if ($env:GITHUB_WORKSPACE) { $env:GITHUB_WORKSPACE } else { (Resolve-Path "$PSScriptRoot\..\..\..").Path }
+$TSDToolsPath = Join-Path $TSDRepositoryPath '.github\Tools'
+$TSDPackagesPath = Join-Path $TSDRepositoryPath '.github\Packages'
+$TSDTempPath = if ($env:RUNNER_TEMP) { $env:RUNNER_TEMP } else { $env:TEMP }
+if (-not $TSDTempPath -or -not (Test-Path -LiteralPath $TSDTempPath -PathType Container)) {
+    throw 'An existing RUNNER_TEMP (or TEMP outside Actions) directory is required.'
 }
-
-$TSDDataPath = Get-TsdPath $env:DATA_PATH 'D:\Jenkins\'
-$TSDShare = if ($env:BATCHES_SHARE) { $env:BATCHES_SHARE } else { '\\nlybstqvp4dt7nv\JenkinsBatches' }
-$TSDServerDataPath = Get-TsdPath $env:SERVER_DATA_PATH $TSDShare
-$TSDJenkinsBatchesPath = Get-TsdPath $env:JENKINS_BATCHES_PATH $TSDShare
+$TSDCommandPath = Join-Path $TSDTempPath 'tsd-command.cmd'
+$TSDResetCommandPath = Join-Path $TSDTempPath 'tsd-reset.cmd'
 $TSDResultViewerURL = if ($env:RESULT_VIEWER_URL) { $env:RESULT_VIEWER_URL } else { 'http://igts-resultviewer.ta.philips.com/#/testrun/' }
 $TSDTracingFolder = if ($env:TSD_TRACING_FOLDER) { $env:TSD_TRACING_FOLDER } else { 'D:\Collected\Tracing\FAST' }
 $TSDResultsFolder = if ($env:TSD_RESULTS_FOLDER) { $env:TSD_RESULTS_FOLDER } else { 'C:\Temp\FAST\Results' }
@@ -156,10 +155,10 @@ function StartTest {
     $commandData += "`"$global:nunitExecutable`" " + $work + "$formattedArgs " + "`"$testLibraryFolder$($env:TEST_LIBRARY)`"`n"
 
     $commandData += "Echo cleanup`n"
-    $commandData += "DEL /F /Q %~f0`n"
+    $commandData += "DEL /F /Q `"%~f0`"`n"
     Write-Host $commandData
-    Write-TsdFile "$($TSDDataPath)command.cmd" $commandData
-    [void](ExecuteCommand 'Cleanup and then start test' "$($TSDDataPath)command.cmd")
+    Write-TsdFile $TSDCommandPath $commandData
+    [void](ExecuteCommand 'Cleanup and then start test' $TSDCommandPath)
 }
 
 function InitializeNunitSettings {
@@ -176,11 +175,14 @@ function InitializeNunitSettings {
     $global:majorVersion = if ($nunitVersion) { ($nunitVersion.Split('.') | Where-Object { $_ -ne '' })[0] } else { '' }
     Write-Host "Major version: $global:majorVersion"
     if ($global:majorVersion -eq '2') {
-        $global:nunitExecutable = $TSDDataPath + 'Packages\NUnit 2.6.2\bin\nunit-console-x86.exe'
+        $global:nunitExecutable = Join-Path $TSDPackagesPath 'NUnit 2.6.2\bin\nunit-console-x86.exe'
     } elseif ($global:majorVersion -eq '3') {
-        $global:nunitExecutable = $TSDDataPath + 'Packages\NUnit.org\nunit-console\nunit3-console.exe'
+        $global:nunitExecutable = Join-Path $TSDPackagesPath 'NUnit.org\nunit-console\nunit3-console.exe'
     } else {
         throw "[ERROR] Unsupported NUnit version: $global:majorVersion"
+    }
+    if (-not (Test-Path -LiteralPath $global:nunitExecutable -PathType Leaf)) {
+        throw "Required checked-out NUnit runner is missing: $global:nunitExecutable"
     }
     Set-TsdState 'TSD_MAJOR_VERSION' $global:majorVersion
     Set-TsdState 'TSD_NUNIT_EXECUTABLE' $global:nunitExecutable
@@ -188,33 +190,19 @@ function InitializeNunitSettings {
 
 function StartStage_PrepareEnvironment {
     PrintHeader 'STAGE PREPARE ENVIRONMENT'
-    # Run*CurrentUser.exe are in use and cannot be copied, newest version is already copied via jenkins so skip the copy of it.
-    # Create batch file to run as Jenkins has a bug on parsing dualquotes to the batch call.
-    # Also when creating batch file, the RunAsCurrentUser doesn't have to run for each call.
+    # Tooling is already checked out. Only test inputs need copying under the interactive user.
     $commandData = ''
     $commandData += GetKillingCommands
-
-    # -------- TOOLS (incremental copy: new + updated files only) --------
-    $commandData += "robocopy.exe `"$($TSDServerDataPath)Tools`" `"$($TSDDataPath)Tools`" "
-    $commandData += "/E /XO /FFT /XF Run*CurrentUser.exe /MT:8 /R:100 /W:30 /NP /NFL /NDL`n"
-
-    # -------- PACKAGES (incremental copy: new + updated files only) --------
-    $commandData += "robocopy.exe `"$($TSDServerDataPath)Packages`" `"$($TSDDataPath)Packages`" "
-    $commandData += "/E /XO /FFT /XF Run*CurrentUser.exe /MT:8 /R:100 /W:30 /NP /NFL /NDL`n"
-
-    # -------- BATCHES (incremental copy: new + updated files only) --------
-    $commandData += "robocopy.exe `"$($TSDServerDataPath)Batches`" `"$($TSDDataPath)Batches`" "
-    $commandData += "/E /XO /FFT /XF Run*CurrentUser.exe /MT:8 /R:100 /W:30 /NP /NFL /NDL`n"
 
     $commandData += 'robocopy.exe /E /IS /W:30 /R:100 /np "'
     $commandData += "$($env:TESTS_LOCATION.Trim())"
     $commandData += "`" `"$TSDTestsCopyTarget`"`n"
     $commandData += "Echo cleanup`n"
-    $commandData += "DEL /F/Q %~f0`n"
+    $commandData += "DEL /F/Q `"%~f0`"`n"
     # commandData.replaceAll('""', '"'): the TestsLocation default already has quotes
     $commandData = $commandData.Replace('""', '"')
-    Write-TsdFile "$($TSDDataPath)command.cmd" $commandData
-    [void](ExecuteCommand 'Copying data' "$($TSDDataPath)command.cmd")
+    Write-TsdFile $TSDCommandPath $commandData
+    [void](ExecuteCommand 'Copying data' $TSDCommandPath)
 }
 
 function CopyResultsToNightbatch {
@@ -233,7 +221,7 @@ function CopyResultsToNightbatch {
     $fileNames = '"SpecflowLogging.log"'
     $pdcVersionResult = ''
     # bat returnStdout: true -> the output starts with the echoed command line (no @), then the dir output
-    $pdcCommand = "`"$($TSDDataPath)Tools\RunAsCurrentUser.exe`" `"dir /B /O:D $fromLocation\*.pdcVersion`""
+    $pdcCommand = "`"$TSDToolsPath\RunAsCurrentUser.exe`" `"dir /B /O:D $fromLocation\*.pdcVersion`""
     try {
         $env:TSD_BAT = $pdcCommand
         $pdcOut = @(cmd.exe /d /s /c --% "%TSD_BAT%"
@@ -299,9 +287,9 @@ function CopyResultsToNightbatch {
     $commandData += "echo [InternetShortcut] > `"$($global:_lastNightbatchLocation)\LinkToResultViewer.url`"`n"
     $commandData += "echo URL=$TSDResultViewerURL$_systemName/$($global:_pdc)/$testNameIncludingDateTime >> `"$($global:_lastNightbatchLocation)\LinkToResultViewer.url`"`n"
     $commandData += "Echo cleanup`n"
-    $commandData += "DEL /F/Q %~f0`n"
-    Write-TsdFile "$($TSDDataPath)command.cmd" $commandData
-    [void](ExecuteCommand 'Copying data' "$($TSDDataPath)command.cmd" $false)
+    $commandData += "DEL /F/Q `"%~f0`"`n"
+    Write-TsdFile $TSDCommandPath $commandData
+    [void](ExecuteCommand 'Copying data' $TSDCommandPath $false)
     Write-FunctionsSummary "| Results | $($global:_lastNightbatchLocation) |"
 }
 
@@ -365,14 +353,14 @@ function RunResetTest {
     $resetArgs = BuildNunitArgs '/include:Test.PostLoop.Reset' $global:majorVersion $nunitOutputFolder
     $work = if ($global:majorVersion -eq '3') { "--work=`"$nunitOutputFolder`" " } else { "/work:`"$nunitOutputFolder`" " }
     $resetCmd = "`"$global:nunitExecutable`" " + $work + "$resetArgs " + "`"$testLibraryFolder$resetLibrary`"`n"
-    $resetCmd += "DEL /F /Q %~f0`n"
+    $resetCmd += "DEL /F /Q `"%~f0`"`n"
     Write-Host $resetCmd
-    Write-TsdFile "$($TSDDataPath)resetCmd.cmd" $resetCmd
-    [void](ExecuteCommand 'Running Reset Test' "$($TSDDataPath)resetCmd.cmd" $false)
+    Write-TsdFile $TSDResetCommandPath $resetCmd
+    [void](ExecuteCommand 'Running Reset Test' $TSDResetCommandPath $false)
     Write-Host 'Reset execution finished — environment restored.'
 }
 
-function ExecuteCommand([string] $commandTitle, [string] $command, [bool] $skipOnAbort = $true, [bool] $runOnMaster = $false) {
+function ExecuteCommand([string] $commandTitle, [string] $command, [bool] $skipOnAbort = $true) {
     $exitCode = -1
     if ($skipOnAbort -eq $true -and $global:_buildFailed -eq $true) {
         Write-Host "Skip command $command due to abort or build failure"
@@ -383,10 +371,7 @@ function ExecuteCommand([string] $commandTitle, [string] $command, [bool] $skipO
             "taskkill /F /IM `"RunAsCurrentUser.exe`"`n" +
             "taskkill /F /IM `"RunInCurrentUser.exe`"`n" +
             "exit /B 0`n"))
-        $runAsCurrentUser = "$($TSDDataPath)Tools\RunAsCurrentUser.exe"
-        if ($runOnMaster -eq $true) {
-            $runAsCurrentUser = "$($TSDJenkinsBatchesPath)Tools\RunAsCurrentUser.exe"
-        }
+        $runAsCurrentUser = "$TSDToolsPath\RunAsCurrentUser.exe"
         Start-Sleep -Seconds 1
         Write-Host "### EXECUTE $($commandTitle): $command"
         # catchError(buildResult: "NOT_BUILT", stageResult: "FAILURE") around a returnStatus bat:
