@@ -112,9 +112,4 @@ jobs:
         run: '& "$env:SCRIPTS\02__PrepareEnvironment.ps1"'
 
       - name: Execute Tests
-        id: execute-tests
         run: '& "$env:SCRIPTS\03__ExecuteTests.ps1"'
-
-      - name: Execute Tests After Cancel
-        if: ${{ cancelled() && steps.execute-tests.outcome == 'cancelled' }}
-        run: '& "$env:SCRIPTS\04__ExecuteTestsAfterCancel.ps1"'
