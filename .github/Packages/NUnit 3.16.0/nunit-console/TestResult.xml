@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8" standalone="no"?>
+<test-run id="0" runstate="Runnable" testcasecount="1" result="Failed" label="Error" total="1" passed="0" failed="1" warnings="0" inconclusive="0" skipped="0" asserts="0" engine-version="3.15.0.0" clr-version="4.0.30319.42000" start-time="2022-04-20 11:34:42Z" end-time="2022-04-20 11:34:43Z" duration="0.564321">
+  <command-line><![CDATA[nunit3-console.exe  C:\GitHubResultviewer\sta-resultviewer\regressiontests\FastResultViewer.RegressionTest\bin\Debug\net5.0\FastResultViewer.RegressionTest.dll]]></command-line>
+  <test-suite type="Assembly" id="0" name="" fullname="" runstate="NotRunnable" testcasecount="1" result="Failed" label="Error" start-time="2022-04-20 11:34:43Z" end-time="2022-04-20 11:34:43Z" duration="0.001" total="1" passed="0" failed="1" inconclusive="0" skipped="0" asserts="0">
+    <failure>
+      <message><![CDATA[NUnit.Engine.NUnitEngineException : Unable to acquire remote process agent]]></message>
+      <stack-trace><![CDATA[--NUnitEngineException
+Unable to acquire remote process agent
+   at NUnit.Engine.Runners.ProcessRunner.CreateAgentAndRunnerIfNeeded()
+   at NUnit.Engine.Runners.ProcessRunner.RunTests(ITestEventListener listener, TestFilter filter)
+]]></stack-trace>
+    </failure>
+  </test-suite>
+</test-run>

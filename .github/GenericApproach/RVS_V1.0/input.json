@@ -1,0 +1,1 @@
+{"ProjectName":"/IGTs/IGT_System_Automation_COE","Objective":"NormCompliance","Host":"ilmt.igts.ta.philips.com","Port":"7001","UserId":"nlybstqvp4-sys134","TestScriptFolderDir":"C:\\Git\\Sta-Keywords\\root\\SystemTestKeywordLibrary\\FAST\\SystemTests\\AcquisitionNormCompliance\\B_Features\\","TestCaseNamePrefix":"TC_","AcceptedRequirements":["UID","SSRS"],"LogFileName":""}

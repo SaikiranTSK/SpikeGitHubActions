@@ -1,0 +1,16 @@
+Set Batch=%1
+Set TestsLocation=%2
+Set TestLibrary=%3
+Set TestParameters=%4
+Set AssignedId=%5
+Set SaveLocation=%6
+Set RunWithNunit3=%7
+
+mkdir "D:\Jenkins\%Batch%\"
+@echo Batch=%Batch%> D:\Jenkins\%Batch%\TestParams.txt
+@echo TestsLocation=%TestsLocation%>> D:\Jenkins\%Batch%\TestParams.txt
+@echo TestLibrary=%TestLibrary%>> D:\Jenkins\%Batch%\TestParams.txt
+@echo TestParameters=%TestParameters%>> D:\Jenkins\%Batch%\TestParams.txt
+@echo AssignedId=%AssignedId%>> D:\Jenkins\%Batch%\TestParams.txt
+@echo SaveLocation=%SaveLocation%>> D:\Jenkins\%Batch%\TestParams.txt
+@echo RunWithNunit3=%RunWithNunit3%>> D:\Jenkins\%Batch%\TestParams.txt

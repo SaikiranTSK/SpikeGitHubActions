@@ -1,0 +1,159 @@
+Best Automatic Tests
+********************
+
+Restart Side PC
+===============
+# Every day
+45 20 * * * %SystemName=Technopolis5
+
+# Every day
+46 20 * * * %SystemName=Technopolis6
+
+# Every day
+47 20 * * * %SystemName=Technopolis7
+
+# Every day
+48 20 * * * %SystemName=AntonMauve-VTM
+
+
+AcceptanceTesting
+=================
+# Monday, Tuesday, Wednesday, Thursday (TP5, mainline, no ELK upload)
+01 21 * * 1-4 % SystemName=Technopolis5; Branch=master; UploadELK=false
+
+# Monday, Tuesday, Wednesday, Thursday, Friday (TP6, mainline, no ELK upload)
+02 21 * * 1-5 % SystemName=Technopolis6; Branch=master; UploadELK=false
+04 21 * * 1-5 % SystemName=Technopolis6; Branch=master; UploadELK=false
+
+# Monday, Tuesday, Wednesday, Thursday, Friday (TP7, mainline, no ELK upload)
+03 21 * * 1-5 % SystemName=Technopolis7; Branch=master; UploadELK=false
+05 21 * * 1-5 % SystemName=Technopolis7; Branch=master; UploadELK=false
+06 21 * * 1-5 % SystemName=Technopolis7; Branch=master; UploadELK=false
+
+# Saturday (TP5, Puma, no ELK upload)
+01 16 * * 6 % SystemName=Technopolis5; Branch=release-31.x; UploadELK=false
+02 16 * * 6 % SystemName=Technopolis5; Branch=release-31.x; UploadELK=false
+03 16 * * 6 % SystemName=Technopolis5; Branch=release-31.x; UploadELK=false
+04 16 * * 6 % SystemName=Technopolis5; Branch=release-31.x; UploadELK=false
+
+# Saturday (TP6, mainline, no ELK upload)
+01 14 * * 6 % SystemName=Technopolis6; Branch=master; UploadELK=false
+03 14 * * 6 % SystemName=Technopolis6; Branch=master; UploadELK=false
+04 14 * * 6 % SystemName=Technopolis6; Branch=master; UploadELK=false
+05 14 * * 6 % SystemName=Technopolis6; Branch=master; UploadELK=false
+
+# Saturday (TP7, mainline, no ELK upload)
+02 14 * * 6 % SystemName=Technopolis7; Branch=master; UploadELK=false
+06 14 * * 6 % SystemName=Technopolis7; Branch=master; UploadELK=false
+07 14 * * 6 % SystemName=Technopolis7; Branch=master; UploadELK=false
+08 14 * * 6 % SystemName=Technopolis7; Branch=master; UploadELK=false
+
+
+CriticalToQualityTesting
+========================
+# Monday, Tuesday, Wednesday, Thursday (TP5, mainline, ELK upload)
+02 22 * * 1-4 % SystemName=Technopolis5; Branch=master; UploadELK=true
+
+# Tuesday, Wednesday, Thursday, Friday, Saturday (TP6, mainline, ELK upload)
+03 00 * * 2-6 % SystemName=Technopolis6; Branch=master; UploadELK=true
+
+# Tuesday, Wednesday, Thursday, Friday, Saturday (TP7, mainline, ELK upload)
+34 01 * * 2-6 % SystemName=Technopolis7; Branch=master; UploadELK=true
+
+# Saturday (TP5, Puma, ELK upload)
+02 21 * * 6 % SystemName=Technopolis5; Branch=release-31.x; UploadELK=true
+05 21 * * 6 % SystemName=Technopolis5; Branch=release-31.x; UploadELK=true
+
+# Saturday (TP6, mainline, ELK upload)
+03 21 * * 6 % SystemName=Technopolis6; Branch=master; UploadELK=true
+06 21 * * 6 % SystemName=Technopolis6; Branch=master; UploadELK=true
+
+# Saturday (TP7, mainline, ELK upload)
+04 21 * * 6 % SystemName=Technopolis7; Branch=master; UploadELK=true
+07 21 * * 6 % SystemName=Technopolis7; Branch=master; UploadELK=true
+
+
+NormComplianceDevelopment
+=========================
+# Monday, Tuesday, Wednesday, Thursday (TP5, mainline)
+33 23 * * 1-4 % SystemName=Technopolis5; Branch=master; UploadELK=false
+34 23 * * 1-4 % SystemName=Technopolis5; Branch=master; UploadELK=false
+
+# Tuesday, Wednesday, Thursday, Friday (TP7, mainline)
+05 03 * * 2-5 % SystemName=Technopolis7; Branch=master; UploadELK=false
+
+
+NormCompliance
+==============
+# Tuesday, Wednesday, Thursday, Friday, Saturday (TP6, mainline)
+04 02 * * 2-6 % SystemName=Technopolis6; Branch=master; UploadELK=false
+
+# Tuesday, Wednesday, Thursday, Friday, Saturday (AntonMauve-VTM, mainline)
+06 21 * * 2-6 % SystemName=AntonMauve-VTM; Branch=master; UploadELK=false
+
+PosTeamTests
+============
+# Monday, Tuesday, Wednesday, Thursday, Friday, Saturday (AntonMauve-VTM, mainline)
+07 21 * * 1-6 %SystemName=AntonMauve-VTM; Branch=master; UploadELK=false
+
+# Monday, Tuesday, Wednesday, Thursday, Friday, Saturday (TP5, mainline)
+05 22 * * 1-6 %SystemName=Technopolis5; Branch=master; UploadELK=false
+
+PosSafeTests
+============
+# Tuesday, Wednesday, Thursday, Friday (TP5, mainline)
+15 01 * * 2-5 % SystemName=Technopolis5; Branch=master; UploadELK=false
+16 01 * * 2-5 % SystemName=Technopolis5; Branch=master; UploadELK=false
+
+# Monday, Tuesday, Wednesday, Thursday, Friday, Saturday (AntonMauve-VTM, mainline)
+04 21 * * 1-6 %SystemName=AntonMauve-VTM; Branch=master; UploadELK=false
+05 21 * * 1-6 %SystemName=AntonMauve-VTM; Branch=master; UploadELK=false
+
+
+ClinicalResponseTimesTesting
+============================
+# Sunday (TP6, mainline, ELK upload)
+04 01 * * 7 % SystemName=Technopolis6; Branch=master; UploadELK=true
+
+# Sunday (TP7, mainline, ELK upload)
+05 01 * * 7 % SystemName=Technopolis7; Branch=master; UploadELK=true
+
+
+ServiceHubPositiveTesting (disabled)
+====================================
+# Monday, Tuesday, Wednesday, Thursday (TP5, mainline, no ELK upload)
+33 23 * * 1-4 % SystemName=Technopolis5; Branch=master; UploadELK=false
+
+# Tuesday, Wednesday, Thursday, Friday (TP5, mainline, no ELK upload)
+35 02 * * 2-5 % SystemName=Technopolis5; Branch=master; UploadELK=false
+
+# Sunday (TP5, Puma, no ELK upload)
+03 00 * * 7 % SystemName=Technopolis5; Branch=release-Azurion-R3.0; UploadELK=false
+04 00 * * 7 % SystemName=Technopolis5; Branch=release-Azurion-R3.0; UploadELK=false
+05 06 * * 7 % SystemName=Technopolis5; Branch=release-Azurion-R3.0; UploadELK=false
+06 06 * * 7 % SystemName=Technopolis5; Branch=release-Azurion-R3.0; UploadELK=false
+
+
+ServiceHubNegativeTesting (disabled)
+====================================
+# Tuesday, Wednesday, Thursday, Friday (TP5, mainline, no ELK upload)
+34 01 * * 2-5 % SystemName=Technopolis5; Branch=master; UploadELK=false
+36 04 * * 2-5 % SystemName=Technopolis5; Branch=master; UploadELK=false
+
+# Sunday (TP5, Puma, no ELK upload)
+04 04 * * 7 % SystemName=Technopolis5; Branch=release-Azurion-R3.0; UploadELK=false
+05 04 * * 7 % SystemName=Technopolis5; Branch=release-Azurion-R3.0; UploadELK=false
+06 10 * * 7 % SystemName=Technopolis5; Branch=release-Azurion-R3.0; UploadELK=false
+07 10 * * 7 % SystemName=Technopolis5; Branch=release-Azurion-R3.0; UploadELK=false
+
+
+TestRobot Regression
+====================
+# Saturday (TP5, Puma)
+00 09 * * 6 % SystemName=Technopolis5; Batch=TestRobotAcceptanceAndRegression-Azurion-R3.1
+
+# Saturday (TP6, master)
+00 07 * * 6 % SystemName=Technopolis6; Batch=TestRobotAcceptanceAndRegression
+
+# Saturday (TP7, master)
+01 07 * * 6 % SystemName=Technopolis7; Batch=TestRobotAcceptanceAndRegression

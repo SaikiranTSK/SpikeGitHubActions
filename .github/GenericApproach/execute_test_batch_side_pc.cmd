@@ -1,0 +1,1160 @@
+echo on
+echo %~1
+
+set acceptanceTestJobName=AcceptanceTesting
+set acceptanceTestDll="C:\Program Files (x86)\FAST\FAST.SystemTests.Acceptance.dll"
+set acceptanceTestIncludeCategories="Test.PreLoop.Generic,Test.PreLoop.Acquisition,Test.PreLoop.Geometry,Test.Batch.Acceptance,Test.PostLoop.Generic"
+
+set RegressionTestJobName=RegressionTests
+set RegressionTestDll="C:\Program Files (x86)\FAST\FAST.SystemTests.Regression.dll"
+set RegressionTestIncludeCategories="Test.PreLoop.Generic,Test.Batch.Regression,Test.PostLoop.Generic"
+
+set iXrayProcedureTestJobName=iXrayProcedure
+set iXrayProcedureTestDll="C:\Program Files (x86)\FAST\FAST.SystemTests.ExternalAzurionInterfaces.dll"
+set iXrayProcedureTestIncludeCategories="Test.PreLoop.Generic,Test.Batch.iProcedure,Test.Batch.iCapability,Test.PostLoop.Generic"
+
+set iProcedureMainlineTestsJobName=iProcedureMain
+set iProcedureMainlineTestsDll="C:\Program Files (x86)\FAST\FAST.SystemTests.ExternalAzurionInterfaces.dll"
+set iProcedureMainlineTestsIncludeCategories="Test.PreLoop.Generic,Test.Batch.MainlineRegression,Test.PostLoop.Generic"
+
+set reliabilityTestJobName=ReliabilityTesting
+set reliabilityTestDll="C:\Program Files (x86)\FAST\FAST.SystemTests.Reliability.dll"
+set reliabilityTestIncludeCategories="Test.Batch.Reliability"
+
+set reliabilityMainlineTestsJobName=ReliabilityMain
+set reliabilityMainlineTestsDll="C:\Program Files (x86)\FAST\FAST.SystemTests.Reliability.dll"
+set reliabilityMainlineTestsIncludeCategories="Test.PreLoop.Generic,Test.Batch.MainlineRegression,Test.PostLoop.Generic"
+
+set acqDailyRegressionTestsJobName=AcqDailyRegressionTests
+set acqDailyRegressionTestsDll="C:\Program Files (x86)\FAST\FAST.SystemTests.Acquisition.dll"
+set acqDailyRegressionTestsIncludeCategories="Test.PreLoop.Generic,Test.PreLoop.Acquisition,Test.Batch.AcqRegression,Test.PostLoop.Generic"
+
+set acqMainlineTestsJobName=AcquisitionMain
+set acqMainlineTestsDll="C:\Program Files (x86)\FAST\FAST.SystemTests.Acquisition.dll"
+set acqMainlineTestsIncludeCategories="Test.PreLoop.Generic,Test.PreLoop.Acquisition,Test.Batch.MainlineRegression,Test.PostLoop.Generic"
+
+set acqMainlineDailyTestsJobName=AcquisitionMainlineDaily
+set acqMainlineDailyTestsDll="C:\Program Files (x86)\FAST\FAST.SystemTests.Acquisition.dll"
+set acqMainlineDailyTestsIncludeCategories="Test.PreLoop.Generic,Test.Batch.MainlineDailyRegression,Test.PostLoop.Generic"
+
+set acqNormComplianceDevelopmentJobName=NormComplianceDevelopment
+set acqNormComplianceDevelopmentDll="C:\Program Files (x86)\FAST\FAST.SystemTests.AcquisitionNormCompliance.dll"
+set acqNormComplianceDevelopmentIncludeCategories="Test.PreLoop.Generic,Test.PreLoop.Acquisition,Test.Batch.NormCompliance.Development,Test.PostLoop.Generic"
+
+set acqNormComplianceJobName=NormCompliance
+set acqNormComplianceDll="C:\Program Files (x86)\FAST\FAST.SystemTests.AcquisitionNormCompliance.dll"
+set acqNormComplianceIncludeCategories="Test.PreLoop.Generic,Test.PreLoop.Acquisition,Test.Batch.NormCompliance.Completed,Test.PostLoop.Generic"
+
+set acqNormComplianceBatch1E2EJobName=NormComplianceBatch1E2E
+set acqNormComplianceBatch1E2EIncludeCategories="Test.PreLoop.Generic,Test.PreLoop.Acquisition,Test.Batch.NormCompliance.B1E2E,Test.PostLoop.Generic"
+
+set acqNormComplianceBatch1JobName=NormComplianceBatch1
+set acqNormComplianceBatch1IncludeCategories="Test.PreLoop.Generic,Test.PreLoop.Acquisition,Test.Batch.NormCompliance.B1,Test.PostLoop.Generic"
+
+set acqNormComplianceBatch2JobName=NormComplianceBatch2
+set acqNormComplianceBatch2IncludeCategories="Test.PreLoop.Generic,Test.PreLoop.Acquisition,Test.Batch.NormCompliance.B2,Test.PostLoop.Generic"
+
+set acqNormComplianceBatch3JobName=NormComplianceBatch3
+set acqNormComplianceBatch3IncludeCategories="Test.PreLoop.Generic,Test.PreLoop.Acquisition,Test.Batch.NormCompliance.B3,Test.PostLoop.Generic"
+
+set acqNormComplianceBatch4JobName=NormComplianceBatch4
+set acqNormComplianceBatch4IncludeCategories="Test.PreLoop.Generic,Test.PreLoop.Acquisition,Test.Batch.NormCompliance.B4,Test.PostLoop.Generic"
+
+set acqNormComplianceBatch5JobName=NormComplianceBatch5
+set acqNormComplianceBatch5IncludeCategories="Test.PreLoop.Generic,Test.PreLoop.Acquisition,Test.Batch.NormCompliance.B5,Test.PostLoop.Generic"
+
+set ctqTestJobName=CriticalToQualityTesting
+set ctqTestDll="C:\Program Files (x86)\FAST\FAST.SystemTests.CriticalToQuality.dll"
+set ctqTestIncludeCategories="Test.PreLoop.Generic,Test.PreLoop.Acquisition,Test.PreLoop.Geometry,Test.Batch.CTQ,Test.PostLoop.Generic"
+
+set PerformanceTestsJobName=PerformanceMain 
+set PerformanceTestsDll="C:\Program Files (x86)\FAST\FAST.SystemTests.ClinicalResponseTimes.dll"
+set PerformanceTestsIncludeCategories="Test.Batch.MainlineRegression"
+
+set PerformanceMainlineDailyTestsJobName=PerformanceMainlineDaily 
+set PerformanceMainlineDailyTestsDll="C:\Program Files (x86)\FAST\FAST.SystemTests.ClinicalResponseTimes.dll"
+set PerformanceMainlineDailyTestsIncludeCategories="Test.Batch.MainlineDailyRegression"
+
+set crtTestJobName=ClinicalResponseTimesTesting
+set crtTestDll="C:\Program Files (x86)\FAST\FAST.SystemTests.CriticalToQuality.dll"
+set crtTestIncludeCategories="Test.Batch.CRT,Test.Batch.FillDisk,Test.Batch.FullReset"
+
+set crtElkTestJobName=ClinicalResponseTimesELK
+set crtElkTestDll="C:\Program Files (x86)\FAST\FAST.SystemTests.CriticalToQuality.dll"
+set crtElkTestIncludeCategories="Test.Batch.CRT,Test.Batch.FillDisk,Test.Batch.FullReset"
+
+set serviceHubPositiveTestJobName=ServiceHubPositiveTesting
+set serviceHubPositiveTestDll="C:\Program Files (x86)\FAST\FAST.SystemTests.ServiceHubSimulator.dll"
+set serviceHubPositiveTestIncludeCategories="Test.PreLoop.Generic,Test.Batch.DeviceRegistration,Test.Batch.RemoteCommandExecution,Test.Batch.SFTP,Test.Batch.Alerting,TC_RSDI_SpecialPackage_Successfull_Installation,TC_RSDI_SpecialPackage_InvalidPackages_Installation,TC_ClinicalMode_SpecialPackage_Successfull_Installation,TC_ClinicalMode_InvalidSpecialPackage_Successfull_Installation,Test.PostLoop.Generic"
+set serviceHubPositiveTestExcludeCategories="TC_RemoteCommandExecution_LoD_EPXdbExport_uploadfails,TC_SFTP_LoD_EPXdbExport_uploadfails,TC_Alerting_Alert_NotDisplayed"
+
+set serviceHubNegativeTestJobName=ServiceHubNegativeTesting
+set serviceHubNegativeTestDll="C:\Program Files (x86)\FAST\FAST.SystemTests.ServiceHubSimulator.dll"
+set serviceHubNegativeTestIncludeCategories="Test.PreLoop.Generic,TC_RemoteCommandExecution_LoD_EPXdbExport_uploadfails,TC_SFTP_LoD_EPXdbExport_uploadfails,TC_Alerting_Alert_NotDisplayed,TC_RSDI_System_Not_Register,TC_RSDI_Remote_Option_Disabled,Test.PostLoop.Generic"
+
+set posTeamTestsJobName=PosTeamTests
+set posTeamTestsDll="C:\Program Files (x86)\FAST\FAST.SystemTests.Geo.dll"
+set posTeamTestsIncludeCategories="Test.PreLoop.Generic,Test.PreLoop.Acquisition,Test.PreLoop.Geometry,SystemTestPos.RegressionTests,Test.PostLoop.Generic"
+
+set geoMainlineTestsJobName=GeoMain
+set geoMainlineTestsDll="C:\Program Files (x86)\FAST\FAST.SystemTests.Geo.dll"
+set geoMainlineTestsIncludeCategories="Test.PreLoop.Generic,Test.PreLoop.Acquisition,Test.PreLoop.Geometry,Test.Batch.MainlineRegression,Test.PostLoop.Generic"
+
+set geoMainlineDailyTestsJobName=GeoMainlineDaily
+set geoMainlineDailyTestsDll="C:\Program Files (x86)\FAST\FAST.SystemTests.Geo.dll"
+set geoMainlineDailyTestsIncludeCategories="Test.PreLoop.Generic,Test.Batch.MainlineDailyRegression,Test.PostLoop.Generic"
+
+set posSafeTestsJobName=PosSafeTests
+set posSafeTestsDll="C:\Program Files (x86)\FAST\FAST.SystemTests.Geo.dll"
+set posSafeTestsIncludeCategories="Test.PreLoop.Generic, Test.PreLoop.Geometry, Test.PreLoop.Acquisition, Test.PostLoop.Generic, Test.Type.Geo-Test.Batch.UnsafeGeoPositions-Test.Batch.GeoSystemSpeed"
+
+set pdcHardShutdownRecoveryJobName=HardShutdownRecovery
+set pdcHardShutdownRecoveryDll="C:\Program Files (x86)\FAST\FAST.SystemTests.HardShutdownRecovery.dll"
+set pdcHardShutdownRecoveryCategories="Test.PreLoop.Generic,Test.PostLoop.Generic"
+
+set pdcSWInstallationJobName=SWInstallation
+set pdcSWInstallationDll="C:\Program Files (x86)\FAST\FAST.SystemTests.Installation.dll"
+set pdcSWInstallationCategories="Test.PreLoop.Installation,Test.Batch.Installation.SWInstallation,Test.PostLoop.Installation"
+
+set pdcUploadLicenseJobName=UploadLicense
+set pdcUploadLicenseDll="C:\Program Files (x86)\FAST\FAST.SystemTests.Installation.dll"
+set pdcUploadLicenseCategories="Test.Batch.Installation.UploadLicense,Test.PostLoop.Installation"
+
+set pdcCustomizationJobName=Customization
+set pdcCustomizationDll="C:\Program Files (x86)\FAST\FAST.SystemTests.Installation.dll"
+set pdcCustomizationCategories="Test.Batch.Installation.Customization,Test.PostLoop.Installation"
+
+set pdcBackupJobName=Backup
+set pdcBackupDll="C:\Program Files (x86)\FAST\FAST.SystemTests.Installation.dll"
+set pdcBackupCategories="Test.Batch.Installation.Backup,Test.PostLoop.Installation"
+
+set pdcRestoreJobName=Restore
+set pdcRestoreDll="C:\Program Files (x86)\FAST\FAST.SystemTests.Installation.dll"
+set pdcRestoreCategories="Test.Batch.Installation.Restore,Test.PostLoop.Installation"
+
+set restoreMainlineTestsJobName=RestoreMain
+set restoreMainlineTestsDll="C:\Program Files (x86)\FAST\FAST.SystemTests.Installation.dll"
+set restoreMainlineTestsIncludeCategories="Test.PreLoop.Installation,MainlineRestore,Test.PostLoop.Installation"
+
+set pdcVtpJobName=VTP
+set pdcVtpDll="C:\Program Files (x86)\FAST\FAST.SystemTests.Installation.dll"
+set pdcVtpCategories="Test.Batch.Installation.VTP,Test.PostLoop.Installation"
+
+set hospitalWorkflowTestJobName=HospitalWorkFlowTesting
+set hospitalWorkflowTestDll="C:\Program Files (x86)\FAST\FAST.SystemTests.HospitalWorkflow.dll"
+set hospitalWorkflowIncludeCategories="Test.PreLoop.Generic,Test.Batch.HospitalWorkflow,Test.PostLoop.Generic"
+
+set hospitalWorkflowMainlineTestsJobName=HospitalWorkFlowMain
+set hospitalWorkflowMainlineTestsDll="C:\Program Files (x86)\FAST\FAST.SystemTests.HospitalWorkflow.dll"
+set hospitalWorkflowMainlineTestsIncludeCategories="Test.PreLoop.Generic,Test.Batch.MainlineRegression,Test.PostLoop.Generic"
+
+set hospitalWorkflowBatch01MainlineTestsJobName=HospitalWorkFlowBatch01_Main
+set hospitalWorkflowBatch01MainlineTestsDll="C:\Program Files (x86)\FAST\FAST.SystemTests.HospitalWorkflow.dll"
+set hospitalWorkflowBatch01MainlineTestsIncludeCategories="Test.PreLoop.Generic,Test.Batch.MainlineRegression01,Test.PostLoop.Generic"
+
+set hospitalWorkflowBatch02MainlineTestsJobName=HospitalWorkFlowBatch02_Main
+set hospitalWorkflowBatch02MainlineTestsDll="C:\Program Files (x86)\FAST\FAST.SystemTests.HospitalWorkflow.dll"
+set hospitalWorkflowBatch02MainlineTestsIncludeCategories="Test.PreLoop.Generic,Test.Batch.MainlineRegression02,Test.PostLoop.Generic"
+
+set hospitalWorkflowBatch03MainlineTestsJobName=HospitalWorkFlowBatch03_Main
+set hospitalWorkflowBatch03MainlineTestsDll="C:\Program Files (x86)\FAST\FAST.SystemTests.HospitalWorkflow.dll"
+set hospitalWorkflowBatch03MainlineTestsIncludeCategories="Test.PreLoop.Generic,Test.Batch.MainlineRegression03,Test.PostLoop.Generic"
+
+set hospitalWorkflowBatch04MainlineTestsJobName=HospitalWorkFlowBatch04_Main
+set hospitalWorkflowBatch04MainlineTestsDll="C:\Program Files (x86)\FAST\FAST.SystemTests.HospitalWorkflow.dll"
+set hospitalWorkflowBatch04MainlineTestsIncludeCategories="Test.PreLoop.Generic,Test.Batch.MainlineRegression04,Test.PostLoop.Generic"
+
+set hospitalWorkflowMasterBatch01MainlineTestsJobName=HospitalWorkflowMasterBatch01_Main
+set hospitalWorkflowMasterBatch01MainlineTestsDll="C:\Program Files (x86)\FAST\FAST.SystemTests.HospitalWorkflow.dll"
+set hospitalWorkflowMasterBatch01MainlineTestsIncludeCategories="Test.PreLoop.Generic,Test.Batch.MasterBatch01,Test.PostLoop.Generic"
+
+set hospitalWorkflowBatch01Sequioa=HospitalWorkflowBatch01_Sequioa
+set hospitalWorkflowBatch01SequioaTestsDll="C:\Program Files (x86)\FAST\FAST.SystemTests.HospitalWorkflow.dll"
+set hospitalWorkflowBatch01SequioaTestsIncludeCategories="Test.PreLoop.Generic,Sequoia_HWF,Test.PostLoop.Generic"
+
+set hospitalWorkflowBatch01MainlineDailyTestsJobName=HospitalWorkflowBatch01_MainlineDaily
+set hospitalWorkflowBatch01MainlineDailyTestsDll="C:\Program Files (x86)\FAST\FAST.SystemTests.HospitalWorkflow.dll"
+set hospitalWorkflowBatch01MainlineDailyTestsIncludeCategories="Test.PreLoop.Generic,Sequoia_HWF,Test.PostLoop.Generic"
+
+set ServiceWorkFlowTestJobName=ServiceWorkFlowTesting
+set ServiceWorkFlowTestDll="C:\Program Files (x86)\FAST\FAST.SystemTests.ServiceWorkFlow.dll"
+set ServiceWorkFlowIncludeCategories="Test.PreLoop.Generic,Test.Batch.ServiceWorkFlow,Test.PostLoop.Generic"
+
+set ServiceWorkFlowMainlineTestsJobName=ServiceWorkflowMain
+set ServiceWorkFlowMainlineTestsDll="C:\Program Files (x86)\FAST\FAST.SystemTests.ServiceWorkFlow.dll"
+set ServiceWorkFlowMainlineTestsIncludeCategories="Test.PreLoop.Generic,Test.Batch.MainlineRegression,Test.PostLoop.Generic"
+
+set ServiceWorkFlowBatch01MainlineTestsJobName=ServiceWorkflowBatch01_Main
+set ServiceWorkFlowBatch01MainlineTestsDll="C:\Program Files (x86)\FAST\FAST.SystemTests.ServiceWorkFlow.dll"
+set ServiceWorkFlowBatch01MainlineTestsIncludeCategories="Test.PreLoop.Generic,Test.Batch.MainlineRegression01,Test.PostLoop.Generic"
+
+set ServiceWorkFlowBatch02MainlineTestsJobName=ServiceWorkflowBatch02_Main
+set ServiceWorkFlowBatch02MainlineTestsDll="C:\Program Files (x86)\FAST\FAST.SystemTests.ServiceWorkFlow.dll"
+set ServiceWorkFlowBatch02MainlineTestsIncludeCategories="Test.PreLoop.Generic,Test.Batch.MainlineRegression02,Test.PostLoop.Generic"
+
+set ServiceWorkFlowBatch03MainlineTestsJobName=ServiceWorkflowBatch03_Main
+set ServiceWorkFlowBatch03MainlineTestsDll="C:\Program Files (x86)\FAST\FAST.SystemTests.ServiceWorkFlow.dll"
+set ServiceWorkFlowBatch03MainlineTestsIncludeCategories="Test.PreLoop.Generic,Test.Batch.MainlineRegression03,Test.PostLoop.Generic"
+
+set ServiceWorkFlowBatch04MainlineTestsJobName=ServiceWorkflowBatch04_Main
+set ServiceWorkFlowBatch04MainlineTestsDll="C:\Program Files (x86)\FAST\FAST.SystemTests.ServiceWorkFlow.dll"
+set ServiceWorkFlowBatch04MainlineTestsIncludeCategories="Test.PreLoop.Generic,Test.Batch.MainlineRegression04,Test.PostLoop.Generic"
+
+set ServiceWorkFlowBatch05MainlineTestsJobName=ServiceWorkflowBatch05_Main
+set ServiceWorkFlowBatch05MainlineTestsDll="C:\Program Files (x86)\FAST\FAST.SystemTests.ServiceWorkFlow.dll"
+set ServiceWorkFlowBatch05MainlineTestsIncludeCategories="Test.PreLoop.Generic,Test.Batch.MainlineRegression05,Test.PostLoop.Generic"
+
+set ServiceWorkFlowBatch06MainlineTestsJobName=ServiceWorkflowBatch06_Main
+set ServiceWorkFlowBatch06MainlineTestsDll="C:\Program Files (x86)\FAST\FAST.SystemTests.ServiceWorkFlow.dll"
+set ServiceWorkFlowBatch06MainlineTestsIncludeCategories="Test.PreLoop.Generic,Test.Batch.MainlineRegression06,Test.PostLoop.Generic"
+
+set ServiceWorkFlowBatch07MainlineTestsJobName=ServiceWorkflowBatch07_Main
+set ServiceWorkFlowBatch07MainlineTestsDll="C:\Program Files (x86)\FAST\FAST.SystemTests.ServiceWorkFlow.dll"
+set ServiceWorkFlowBatch07MainlineTestsIncludeCategories="Test.PreLoop.Generic,Test.Batch.MainlineRegression07,Test.PostLoop.Generic"
+
+set ServiceWorkFlowBatch01SequioaTestsJobName=ServiceWorkflowBatch01_Sequioa
+set ServiceWorkFlowBatch01SequioaTestsDll="C:\Program Files (x86)\FAST\FAST.SystemTests.ServiceWorkFlow.dll"
+set ServiceWorkFlowBatch01SequioaTestsIncludeCategories="Test.PreLoop.Generic,Test.Batch.MainlineDailyRegression01,Test.PostLoop.Generic"
+
+set ServiceWorkFlowBatch02SequioaTestsJobName=ServiceWorkflowBatch02_Sequioa
+set ServiceWorkFlowBatch02SequioaTestsDll="C:\Program Files (x86)\FAST\FAST.SystemTests.ServiceWorkFlow.dll"
+set ServiceWorkFlowBatch02SequioaTestsIncludeCategories="Test.PreLoop.Generic,Test.Batch.MainlineDailyRegression02,Test.PostLoop.Generic"
+
+set ServiceWorkFlowForNightly=SWFNightlyRun
+set ServiceWorkFlowForNightlyTestsDll="C:\Program Files (x86)\FAST\FAST.SystemTests.ServiceWorkFlow.dll"
+set ServiceWorkFlowForNightlyTestsIncludeCategories="Test.PreLoop.Generic,FlaUIKeywordNightlyBatch,Test.PostLoop.Generic"
+
+set ScreensaverConfidenceTestJobName=ScreensaverConfidenceTests
+set ScreensaverConfidenceTestDll="C:\Program Files (x86)\FAST\FAST.SystemTests.Screensaver.dll"
+set ScreensaverConfidenceIncludeCategories="Test.PreLoop.Generic,Test.Batch.Screensaver,Test.PostLoop.Generic"
+
+set ResetHardwareJobName=ResetNidaq
+set ResetHardwareDll="C:\Program Files (x86)\FAST\FAST.SystemTests.SetupTeardown.dll"
+set ResetHardwareIncludeCategories="Test.PostLoop.Reset"
+
+set LicensesMainTestJobName=LicensesMain
+set LicensesMainTestDll="C:\Program Files (x86)\FAST\FAST.SystemTests.Licenses.dll"
+set LicensesMainIncludeCategories="Test.Batch.Licenses,Test.Batch.MainlineRegression"
+
+set ViewingMainTestJobName=ViewingMain
+set ViewingMainTestDll="C:\Program Files (x86)\FAST\FAST.SystemTests.Viewing.dll"
+set ViewingMainIncludeCategories="Test.PreLoop.Generic,Viewing,Test.PostLoop.Generic"
+
+set ProcessingMainTestJobName=ProcessingMain
+set ProcessingMainTestDll="C:\Program Files (x86)\FAST\FAST.SystemTests.Viewing.dll"
+set ProcessingMainIncludeCategories="Test.PreLoop.Generic,Processing,Test.PostLoop.Generic"
+
+set LicensesMainlineDailyTestJobName=LicensesMainlineDaily
+set LicensesMainlineDailyTestDll="C:\Program Files (x86)\FAST\FAST.SystemTests.Licenses.dll"
+set LicensesMainlineDailyIncludeCategories="Test.Batch.Licenses,Test.Batch.MainlineDailyRegression"
+
+set ViewingMainlineDailyTestJobName=ViewingMainlineDaily
+set ViewingMainlineDailyTestDll="C:\Program Files (x86)\FAST\FAST.SystemTests.Viewing.dll"
+set ViewingMainlineDailyIncludeCategories="Test.PreLoop.Generic,Viewing,Test.PostLoop.Generic"
+
+set FlexibleViewingMainlineDailyTestJobName=FlexibleViewingMainlineDaily
+set FlexibleViewingMainlineDailyTestDll="C:\Program Files (x86)\FAST\FAST.SystemTests.FlexibleViewing.dll"
+set FlexibleViewingMainlineDailyIncludeCategories="Test.PreLoop.Generic,Test.Batch.MainlineDailyRegression,Test.PostLoop.Generic"
+
+set FlexibleViewingMainlineTestJobName=FlexibleViewingMain
+set FlexibleViewingMainlineTestDll="C:\Program Files (x86)\FAST\FAST.SystemTests.FlexibleViewing.dll"
+set FlexibleViewingMainlineIncludeCategories="Test.PreLoop.Generic,Test.Batch.MainlineRegression,Test.PostLoop.Generic"
+
+set iXrayProcedureExecutionBatch1JobName=iProcedureExecutionBatch1
+set iXrayProcedureExecutionBatch1TestDll="C:\Program Files (x86)\FAST\FAST.SystemTests.ExternalAzurionInterfaces.dll"
+set iXrayProcedureExecutionBatch1IncludeCategories="Test.PreLoop.Generic,iProcedureBatch1,Test.PostLoop.Generic"
+
+set iXrayProcedureExecutionBatch2JobName=iProcedureExecutionBatch2
+set iXrayProcedureExecutionBatch2TestDll="C:\Program Files (x86)\FAST\FAST.SystemTests.ExternalAzurionInterfaces.dll"
+set iXrayProcedureExecutionBatch2IncludeCategories="Test.PreLoop.Generic,iProcedureBatch2,Test.PostLoop.Generic"
+
+set iXrayProcedureExecutionBatch2JobName=iProcedureExecutionBatch2
+set iXrayProcedureExecutionBatch2TestDll="C:\Program Files (x86)\FAST\FAST.SystemTests.ExternalAzurionInterfaces.dll"
+set iXrayProcedureExecutionBatch2IncludeCategories="Test.PreLoop.Generic,iProcedureBatch2,Test.PostLoop.Generic"
+
+set iXrayControlBatch1JobName=iXrayControlBatch1
+set iXrayControlBatch1TestDll="C:\Program Files (x86)\FAST\FAST.SystemTests.ExternalAzurionInterfaces.dll"
+set iXrayControlBatch1IncludeCategories="Test.PreLoop.Generic,iXrayControlBatch1,Test.PostLoop.Generic"
+
+set iXrayControlBatch2JobName=iXrayControlBatch2
+set iXrayControlBatch2TestDll="C:\Program Files (x86)\FAST\FAST.SystemTests.ExternalAzurionInterfaces.dll"
+set iXrayControlBatch2IncludeCategories="Test.PreLoop.Generic,iXrayControlBatch2,Test.PostLoop.Generic"
+
+set iXrayControlBatch3JobName=iXrayControlBatch3
+set iXrayControlBatch3TestDll="C:\Program Files (x86)\FAST\FAST.SystemTests.ExternalAzurionInterfaces.dll"
+set iXrayControlBatch3IncludeCategories="Test.PreLoop.Generic,iXrayControlBatch3,Test.PostLoop.Generic"
+
+set iXrayControlBatch4JobName=iXrayControlBatch4
+set iXrayControlBatch4TestDll="C:\Program Files (x86)\FAST\FAST.SystemTests.ExternalAzurionInterfaces.dll"
+set iXrayControlBatch4IncludeCategories="Test.PreLoop.Generic,iXrayControlBatch4,Test.PostLoop.Generic"
+
+set iXrayControlBatch5JobName=iXrayControlBatch5
+set iXrayControlBatch5TestDll="C:\Program Files (x86)\FAST\FAST.SystemTests.ExternalAzurionInterfaces.dll"
+set iXrayControlBatch5IncludeCategories="Test.PreLoop.Generic,iXrayControlBatch5,Test.PostLoop.Generic"
+
+set iXrayControlBatch6JobName=iXrayControlBatch6
+set iXrayControlBatch6TestDll="C:\Program Files (x86)\FAST\FAST.SystemTests.ExternalAzurionInterfaces.dll"
+set iXrayControlBatch6IncludeCategories="Test.PreLoop.Generic,iXrayControlBatch6,Test.PostLoop.Generic"
+
+set iXrayControlBatch7JobName=iXrayControlBatch7
+set iXrayControlBatch7TestDll="C:\Program Files (x86)\FAST\FAST.SystemTests.ExternalAzurionInterfaces.dll"
+set iXrayControlBatch7IncludeCategories="Test.PreLoop.Generic,iXrayControlBatch7,Test.PostLoop.Generic"
+
+set iXrayControlMainJobName=iXrayControlMain
+set iXrayControlMainTestDll="C:\Program Files (x86)\FAST\FAST.SystemTests.ExternalAzurionInterfaces.dll"
+set iXrayControlMainIncludeCategories="Test.PreLoop.Generic,Test.Batch.MainlineRegression,Test.PostLoop.Generic"
+
+REM --------------------------
+REM Path to nunit.framework.dll (adjust if needed)
+REM --------------------------
+set nunitDllPath="C:\Program Files (x86)\FAST\nunit.framework.dll"
+
+REM --------------------------
+REM Detect NUnit version
+REM --------------------------
+for /f "usebackq tokens=*" %%A in (`powershell -NoProfile -Command "(Get-Item """%nunitDllPath%""").VersionInfo.ProductVersion"`) do (
+    set "nunitVersion=%%A"
+)
+
+echo Detected NUnit version: %nunitVersion%
+
+REM --------------------------
+REM Logic based on version
+REM --------------------------
+setlocal enabledelayedexpansion
+set "majorVersion=!nunitVersion:~0,1!"
+
+:: Set NUnit executable based on major version
+if "%majorVersion%"=="2" (
+    set nunitExecutable="C:\Program Files (x86)\NUnit 2.6.2\bin\nunit-console-x86.exe"
+) else if "%majorVersion%"=="3" (
+    set nunitExecutable="C:\Program Files (x86)\NUnit.org\nunit-console\nunit3-console.exe"
+) else (
+    echo [ERROR] Unsupported NUnit version: %nunitVersion%
+    exit /b 1
+)
+
+set nunitOutputFolder="C:\Temp\FAST\Results\TestOutput"
+REM Set the category filter variable
+
+if not exist "%nunitOutputFolder%" (
+    echo Creating NUnit result folder: %nunitOutputFolder%
+    mkdir "%nunitOutputFolder%"
+)
+
+echo "Starting Nunit Console Tests"
+
+if %1==%acceptanceTestJobName% (
+    if "%majorVersion%"=="2" (
+        %nunitExecutable% /work:%nunitOutputFolder% %acceptanceTestDll% /include:%acceptanceTestIncludeCategories% /exclude:VirtualAzurionOnly
+    ) else if "%majorVersion%"=="3" (
+        setlocal enabledelayedexpansion
+        call :buildWhereClause %acceptanceTestIncludeCategories% "VirtualAzurionOnly"
+        %nunitExecutable% %acceptanceTestDll% --where "!whereClause!" --result="%nunitOutputFolder%\TestResult.xml;format=nunit3" --result="%nunitOutputFolder%\TestResult_Nunit2.xml;format=nunit2" 
+        endlocal
+    )
+    echo "Generate Specflow Report"
+    REM only supported for the Acceptance test
+    call "D:/Jenkins/GenericApproach/generate_specflow_report.cmd" "%majorVersion%"
+) else if %1==%reliabilityTestJobName% (
+    if "%majorVersion%"=="2" (
+        %nunitExecutable% /work:%nunitOutputFolder% %reliabilityTestDll% /include:%reliabilityTestIncludeCategories%
+    ) else (
+        setlocal enabledelayedexpansion
+        call :buildWhereClause %reliabilityTestIncludeCategories%
+        %nunitExecutable% %reliabilityTestDll% --where "!whereClause!" --result="%nunitOutputFolder%\TestResult.xml;format=nunit3"
+        endlocal
+    )
+) else if %1==%reliabilityMainlineTestsJobName% (
+    if "%majorVersion%"=="2" (
+        %nunitExecutable% /work:%nunitOutputFolder% %reliabilityMainlineTestsDll% /include:%reliabilityMainlineTestsIncludeCategories%
+    ) else (
+        setlocal enabledelayedexpansion
+        call :buildWhereClause %reliabilityMainlineTestsIncludeCategories%
+        %nunitExecutable% %reliabilityMainlineTestsDll% --where "!whereClause!" --result="%nunitOutputFolder%\TestResult.xml;format=nunit3"
+        endlocal
+    )
+) else if %1==%acqDailyRegressionTestsJobName% (
+    if "%majorVersion%"=="2" (
+        %nunitExecutable% /work:%nunitOutputFolder% %acqDailyRegressionTestsDll% /include:%acqDailyRegressionTestsIncludeCategories%
+    ) else (
+        setlocal enabledelayedexpansion
+        call :buildWhereClause %acqDailyRegressionTestsIncludeCategories%
+        %nunitExecutable% %acqDailyRegressionTestsDll% --where "!whereClause!" --result="%nunitOutputFolder%\TestResult.xml;format=nunit3"
+        endlocal
+    )
+) else if %1==%acqMainlineTestsJobName% (
+    if "%majorVersion%"=="2" (
+        %nunitExecutable% /work:%nunitOutputFolder% %acqMainlineTestsDll% /include:%acqMainlineTestsIncludeCategories%
+    ) else (
+        setlocal enabledelayedexpansion
+        call :buildWhereClause %acqMainlineTestsIncludeCategories%
+        %nunitExecutable% %acqMainlineTestsDll% --where "!whereClause!" --result="%nunitOutputFolder%\TestResult.xml;format=nunit3"
+        endlocal
+    )
+    
+) else if %1==%acqMainlineDailyTestsJobName% (
+    if "%majorVersion%"=="2" (
+        %nunitExecutable% /work:%nunitOutputFolder% %acqMainlineDailyTestsDll% /include:%acqMainlineDailyTestsIncludeCategories%
+    ) else (
+        setlocal enabledelayedexpansion
+        call :buildWhereClause %acqMainlineDailyTestsIncludeCategories%
+        %nunitExecutable% %acqMainlineDailyTestsDll% --where "!whereClause!" --result="%nunitOutputFolder%\TestResult.xml;format=nunit3"
+        endlocal
+    )  
+) else if %~1==%acqNormComplianceDevelopmentJobName% (
+    if "%majorVersion%"=="2" (
+        %nunitExecutable% /work:%nunitOutputFolder% %acqNormComplianceDevelopmentDll% /include:%acqNormComplianceDevelopmentIncludeCategories%
+    ) else (
+        setlocal enabledelayedexpansion
+        call :buildWhereClause %acqNormComplianceDevelopmentIncludeCategories%
+        %nunitExecutable% %acqNormComplianceDevelopmentDll% --where "!whereClause!" --result="%nunitOutputFolder%\TestResult.xml;format=nunit3"
+        endlocal
+    )
+) else if %~1==%acqNormComplianceJobName% (
+    if "%majorVersion%"=="2" (
+        %nunitExecutable% /work:%nunitOutputFolder% %acqNormComplianceDll% /include:%acqNormComplianceIncludeCategories%
+    ) else (
+        setlocal enabledelayedexpansion
+        call :buildWhereClause %acqNormComplianceIncludeCategories%
+        %nunitExecutable% %acqNormComplianceDll% --where "!whereClause!" --result="%nunitOutputFolder%\TestResult.xml;format=nunit3"
+        endlocal
+    )
+) else if %~1==%acqNormComplianceBatch1E2EJobName% (
+    if "%majorVersion%"=="2" (
+        %nunitExecutable% /work:%nunitOutputFolder% %acqNormComplianceDll% /include:%acqNormComplianceBatch1E2EIncludeCategories%
+    ) else (
+        setlocal enabledelayedexpansion
+        call :buildWhereClause %acqNormComplianceBatch1E2EIncludeCategories%
+        %nunitExecutable% %acqNormComplianceDll% --where "!whereClause!" --result="%nunitOutputFolder%\TestResult.xml;format=nunit3"
+        endlocal
+    )
+) else if %~1==%acqNormComplianceBatch1JobName% (
+    if "%majorVersion%"=="2" (
+        %nunitExecutable% /work:%nunitOutputFolder% %acqNormComplianceDll% /include:%acqNormComplianceBatch1IncludeCategories%
+    ) else (
+        setlocal enabledelayedexpansion
+        call :buildWhereClause %acqNormComplianceBatch1IncludeCategories%
+        %nunitExecutable% %acqNormComplianceDll% --where "!whereClause!" --result="%nunitOutputFolder%\TestResult.xml;format=nunit3"
+        endlocal
+    )
+) else if %~1==%acqNormComplianceBatch2JobName% (
+    if "%majorVersion%"=="2" (
+        %nunitExecutable% /work:%nunitOutputFolder% %acqNormComplianceDll% /include:%acqNormComplianceBatch2IncludeCategories%
+    ) else (
+        setlocal enabledelayedexpansion
+        call :buildWhereClause %acqNormComplianceBatch2IncludeCategories%
+        %nunitExecutable% %acqNormComplianceDll% --where "!whereClause!" --result="%nunitOutputFolder%\TestResult.xml;format=nunit3"
+        endlocal
+    )
+) else if %~1==%acqNormComplianceBatch3JobName% (
+    if "%majorVersion%"=="2" (
+        %nunitExecutable% /work:%nunitOutputFolder% %acqNormComplianceDll% /include:%acqNormComplianceBatch3IncludeCategories%
+    ) else (
+        setlocal enabledelayedexpansion
+        call :buildWhereClause %acqNormComplianceBatch3IncludeCategories%
+        %nunitExecutable% %acqNormComplianceDll% --where "!whereClause!" --result="%nunitOutputFolder%\TestResult.xml;format=nunit3"
+        endlocal
+    )
+) else if %~1==%acqNormComplianceBatch4JobName% (
+    if "%majorVersion%"=="2" (
+        %nunitExecutable% /work:%nunitOutputFolder% %acqNormComplianceDll% /include:%acqNormComplianceBatch4IncludeCategories%
+    ) else (
+        setlocal enabledelayedexpansion
+        call :buildWhereClause %acqNormComplianceBatch4IncludeCategories%
+        %nunitExecutable% %acqNormComplianceDll% --where "!whereClause!" --result="%nunitOutputFolder%\TestResult.xml;format=nunit3"
+        endlocal
+    )
+) else if %~1==%acqNormComplianceBatch5JobName% (
+    if "%majorVersion%"=="2" (
+        %nunitExecutable% /work:%nunitOutputFolder% %acqNormComplianceDll% /include:%acqNormComplianceBatch5IncludeCategories%
+    ) else (
+        setlocal enabledelayedexpansion
+        call :buildWhereClause %acqNormComplianceBatch5IncludeCategories%
+        %nunitExecutable% %acqNormComplianceDll% --where "!whereClause!" --result="%nunitOutputFolder%\TestResult.xml;format=nunit3"
+        endlocal
+    )
+) else if %1==%ctqTestJobName% (
+    if "%majorVersion%"=="2" (
+        %nunitExecutable% /work:%nunitOutputFolder% %ctqTestDll% /include:%ctqTestIncludeCategories%
+    ) else (
+        setlocal enabledelayedexpansion
+        call :buildWhereClause %ctqTestIncludeCategories%
+        %nunitExecutable% %ctqTestDll% --where "!whereClause!" --result="%nunitOutputFolder%\TestResult.xml;format=nunit3"
+        endlocal
+    )
+) else if %1==%PerformanceTestsJobName% (
+    if "%majorVersion%"=="2" (
+        %nunitExecutable% /work:%nunitOutputFolder% %PerformanceTestsDll% /include:%PerformanceTestsIncludeCategories%
+    ) else (
+        setlocal enabledelayedexpansion
+        call :buildWhereClause %PerformanceTestsIncludeCategories%
+        %nunitExecutable% %PerformanceTestsDll% --where "!whereClause!" --result="%nunitOutputFolder%\TestResult.xml;format=nunit3"
+        endlocal
+    )
+) else if %1==%PerformanceMainlineDailyTestsJobName% (
+    if "%majorVersion%"=="2" (
+        %nunitExecutable% /work:%nunitOutputFolder% %PerformanceMainlineDailyTestsDll% /include:%PerformanceMainlineDailyTestsIncludeCategories%
+    ) else (
+        setlocal enabledelayedexpansion
+        call :buildWhereClause %PerformanceMainlineDailyTestsIncludeCategories%
+        %nunitExecutable% %PerformanceMainlineDailyTestsDll% --where "!whereClause!" --result="%nunitOutputFolder%\TestResult.xml;format=nunit3"
+        endlocal
+    )
+) else if %1==%crtTestJobName% (
+    if "%majorVersion%"=="2" (
+        %nunitExecutable% /work:%nunitOutputFolder% %crtTestDll% /include:%crtTestIncludeCategories%
+    ) else (
+        setlocal enabledelayedexpansion
+        call :buildWhereClause %crtTestIncludeCategories%
+        %nunitExecutable% %crtTestDll% --where "!whereClause!" --result="%nunitOutputFolder%\TestResult.xml;format=nunit3"
+        endlocal
+    )
+) else if %1==%crtElkTestJobName% (
+    if "%majorVersion%"=="2" (
+        %nunitExecutable% /work:%nunitOutputFolder% %crtElkTestDll% /include:%crtElkTestIncludeCategories%
+    ) else (
+        setlocal enabledelayedexpansion
+        call :buildWhereClause %crtElkTestIncludeCategories%
+        %nunitExecutable% %crtElkTestDll% --where "!whereClause!" --result="%nunitOutputFolder%\TestResult.xml;format=nunit3"
+        endlocal
+    )
+) else if %1==%serviceHubPositiveTestJobName% (
+    if "%majorVersion%"=="2" (
+        %nunitExecutable% /work:%nunitOutputFolder% %serviceHubPositiveTestDll% /include:%serviceHubPositiveTestIncludeCategories% /exclude:%serviceHubPositiveTestExcludeCategories%
+    ) else (
+        setlocal enabledelayedexpansion
+        call :buildWhereClause %serviceHubPositiveTestIncludeCategories% %serviceHubPositiveTestExcludeCategories%
+        %nunitExecutable% %serviceHubPositiveTestDll% --where "!whereClause!" --result="%nunitOutputFolder%\TestResult.xml;format=nunit3"
+        endlocal
+    )
+) else if %1==%serviceHubNegativeTestJobName% (
+    if "%majorVersion%"=="2" (
+        %nunitExecutable% /work:%nunitOutputFolder% %serviceHubNegativeTestDll% /include:%serviceHubNegativeTestIncludeCategories%
+    ) else (
+        setlocal enabledelayedexpansion
+        call :buildWhereClause %serviceHubNegativeTestIncludeCategories%
+        %nunitExecutable% %serviceHubNegativeTestDll% --where "!whereClause!" --result="%nunitOutputFolder%\TestResult.xml;format=nunit3"
+        endlocal
+    )
+) else if %1==%posTeamTestsJobName% (
+    if "%majorVersion%"=="2" (
+        %nunitExecutable% /work:%nunitOutputFolder% %posTeamTestsDll% /include:%posTeamTestsIncludeCategories%
+    ) else (
+        setlocal enabledelayedexpansion
+        call :buildWhereClause %posTeamTestsIncludeCategories%
+        %nunitExecutable% %posTeamTestsDll% --where "!whereClause!" --result="%nunitOutputFolder%\TestResult.xml;format=nunit3"
+        endlocal
+    )
+   
+) else if %1==%geoMainlineDailyTestsJobName% (
+    if "%majorVersion%"=="2" (
+        %nunitExecutable% /work:%nunitOutputFolder% %geoMainlineDailyTestsDll% /include:%geoMainlineDailyTestsIncludeCategories%
+    ) else (
+        setlocal enabledelayedexpansion
+        call :buildWhereClause %geoMainlineDailyTestsIncludeCategories%
+        %nunitExecutable% %geoMainlineDailyTestsDll% --where "!whereClause!" --result="%nunitOutputFolder%\TestResult.xml;format=nunit3"
+        endlocal
+    )
+   
+) else if %1==%geoMainlineTestsJobName% (
+    if "%majorVersion%"=="2" (
+        %nunitExecutable% /work:%nunitOutputFolder% %geoMainlineTestsDll% /include:%geoMainlineTestsIncludeCategories%
+    ) else (
+        setlocal enabledelayedexpansion
+        call :buildWhereClause %geoMainlineTestsIncludeCategories%
+        %nunitExecutable% %geoMainlineTestsDll% --where "!whereClause!" --result="%nunitOutputFolder%\TestResult.xml;format=nunit3"
+        endlocal
+    )
+   
+) else if %1==%posSafeTestsJobName% (
+    if "%majorVersion%"=="2" (
+        %nunitExecutable% /work:%nunitOutputFolder% %posSafeTestsDll% /include:%posSafeTestsIncludeCategories%
+    ) else (
+        setlocal enabledelayedexpansion
+        call :buildWhereClause %posTeamTestsIncludeCategories%
+        %nunitExecutable% %posSafeTestsDll% --where "!whereClause!" --result="%nunitOutputFolder%\TestResult.xml;format=nunit3"
+        endlocal
+    )
+) else if %1==%pdcHardShutdownRecoveryJobName% (
+    if "%majorVersion%"=="2" (
+        %nunitExecutable% /work:%nunitOutputFolder% %pdcHardShutdownRecoveryDll% /include:%pdcHardShutdownRecoveryCategories%
+    ) else (
+        setlocal enabledelayedexpansion
+        call :buildWhereClause %pdcHardShutdownRecoveryCategories%
+        %nunitExecutable% %pdcHardShutdownRecoveryDll% --where "!whereClause!" --result="%nunitOutputFolder%\TestResult.xml;format=nunit3"
+        endlocal
+    )
+) else if %1==%pdcSWInstallationJobName% (
+    if "%majorVersion%"=="2" (
+        %nunitExecutable% /work:%nunitOutputFolder% %pdcSWInstallationDll% /include:%pdcSWInstallationCategories%
+    ) else (
+        setlocal enabledelayedexpansion
+        call :buildWhereClause %pdcSWInstallationCategories%
+        %nunitExecutable% %pdcSWInstallationDll% --where "!whereClause!" --result="%nunitOutputFolder%\TestResult.xml;format=nunit3"
+        endlocal
+    )
+) else if %1==%pdcUploadLicenseJobName% (
+    if "%majorVersion%"=="2" (
+        %nunitExecutable% /work:%nunitOutputFolder% %pdcUploadLicenseDll% /include:%pdcUploadLicenseCategories%
+    ) else (
+        setlocal enabledelayedexpansion
+        call :buildWhereClause %pdcUploadLicenseCategories%
+        %nunitExecutable% %pdcUploadLicenseDll% --where "!whereClause!" --result="%nunitOutputFolder%\TestResult.xml;format=nunit3"
+        endlocal
+    )
+) else if %1==%pdcCustomizationJobName% (
+    if "%majorVersion%"=="2" (
+        %nunitExecutable% /work:%nunitOutputFolder% %pdcCustomizationDll% /include:%pdcCustomizationCategories%
+    ) else (
+        setlocal enabledelayedexpansion
+        call :buildWhereClause %pdcCustomizationCategories%
+        %nunitExecutable% %pdcCustomizationDll% --where "!whereClause!" --result="%nunitOutputFolder%\TestResult.xml;format=nunit3"
+        endlocal
+    )
+) else if %1==%pdcBackupJobName% (
+    if "%majorVersion%"=="2" (
+        %nunitExecutable% /work:%nunitOutputFolder% %pdcBackupDll% /include:%pdcBackupCategories%
+    ) else (
+        setlocal enabledelayedexpansion
+        call :buildWhereClause %pdcBackupCategories%
+        %nunitExecutable% %pdcBackupDll% --where "!whereClause!" --result="%nunitOutputFolder%\TestResult.xml;format=nunit3"
+        endlocal
+    )
+) else if %1==%pdcRestoreJobName% (
+    if "%majorVersion%"=="2" (
+        %nunitExecutable% /work:%nunitOutputFolder% %pdcRestoreDll% /include:%pdcRestoreCategories%
+    ) else (
+        setlocal enabledelayedexpansion
+        call :buildWhereClause %pdcRestoreCategories%
+        %nunitExecutable% %pdcRestoreDll% --where "!whereClause!" --result="%nunitOutputFolder%\TestResult.xml;format=nunit3"
+        endlocal
+    )
+) else if %1==%restoreMainlineTestsJobName% (
+    if "%majorVersion%"=="2" (
+        %nunitExecutable% /work:%nunitOutputFolder% %restoreMainlineTestsDll% /include:%restoreMainlineTestsIncludeCategories%
+    ) else (
+        setlocal enabledelayedexpansion
+        call :buildWhereClause %restoreMainlineTestsIncludeCategories%
+        %nunitExecutable% %restoreMainlineTestsDll% --where "!whereClause!" --result="%nunitOutputFolder%\TestResult.xml;format=nunit3"
+        endlocal
+    )
+) else if %1==%pdcVtpJobName% (
+    if "%majorVersion%"=="2" (
+        %nunitExecutable% /work:%nunitOutputFolder% %pdcVtpDll% /include:%pdcVtpCategories%
+    ) else (
+        setlocal enabledelayedexpansion
+        call :buildWhereClause %pdcVtpCategories%
+        %nunitExecutable% %pdcVtpDll% --where "!whereClause!" --result="%nunitOutputFolder%\TestResult.xml;format=nunit3"
+        endlocal
+    )
+) else if %1==%hospitalWorkflowTestJobName% (
+    if "%majorVersion%"=="2" (
+        %nunitExecutable% /work:%nunitOutputFolder% %hospitalWorkflowTestDll% /include:%hospitalWorkflowIncludeCategories%
+    ) else (
+        setlocal enabledelayedexpansion
+        call :buildWhereClause %hospitalWorkflowIncludeCategories%
+        %nunitExecutable% %hospitalWorkflowTestDll% --where "!whereClause!" --result="%nunitOutputFolder%\TestResult.xml;format=nunit3"
+        endlocal
+    )
+) else if %1==%hospitalWorkflowMainlineTestsJobName% (
+    if "%majorVersion%"=="2" (
+        %nunitExecutable% /work:%nunitOutputFolder% %hospitalWorkflowMainlineTestsDll% /include:%hospitalWorkflowMainlineTestsIncludeCategories%
+    ) else (
+        setlocal enabledelayedexpansion
+        call :buildWhereClause %hospitalWorkflowMainlineTestsIncludeCategories%
+        %nunitExecutable% %hospitalWorkflowMainlineTestsDll% --where "!whereClause!" --result="%nunitOutputFolder%\TestResult.xml;format=nunit3"
+        endlocal
+    )
+) else if %1==%hospitalWorkflowBatch01MainlineTestsJobName% (
+    if "%majorVersion%"=="2" (
+        %nunitExecutable% /work:%nunitOutputFolder% %hospitalWorkflowBatch01MainlineTestsDll% /include:%hospitalWorkflowBatch01MainlineTestsIncludeCategories%
+    ) else (
+        setlocal enabledelayedexpansion
+        call :buildWhereClause %hospitalWorkflowBatch01MainlineTestsIncludeCategories%
+        %nunitExecutable% %hospitalWorkflowBatch01MainlineTestsDll% --where "!whereClause!" --result="%nunitOutputFolder%\TestResult.xml;format=nunit3"
+        endlocal
+    )
+) else if %1==%hospitalWorkflowBatch02MainlineTestsJobName% (
+    if "%majorVersion%"=="2" (
+        %nunitExecutable% /work:%nunitOutputFolder% %hospitalWorkflowBatch02MainlineTestsDll% /include:%hospitalWorkflowBatch02MainlineTestsIncludeCategories%
+    ) else (
+        setlocal enabledelayedexpansion
+        call :buildWhereClause %hospitalWorkflowBatch02MainlineTestsIncludeCategories%
+        %nunitExecutable% %hospitalWorkflowBatch02MainlineTestsDll% --where "!whereClause!" --result="%nunitOutputFolder%\TestResult.xml;format=nunit3"
+        endlocal
+    )
+) else if %1==%hospitalWorkflowBatch03MainlineTestsJobName% (
+    if "%majorVersion%"=="2" (
+        %nunitExecutable% /work:%nunitOutputFolder% %hospitalWorkflowBatch03MainlineTestsDll% /include:%hospitalWorkflowBatch03MainlineTestsIncludeCategories%
+    ) else (
+        setlocal enabledelayedexpansion
+        call :buildWhereClause %hospitalWorkflowBatch03MainlineTestsIncludeCategories%
+        %nunitExecutable% %hospitalWorkflowBatch03MainlineTestsDll% --where "!whereClause!" --result="%nunitOutputFolder%\TestResult.xml;format=nunit3"
+        endlocal
+    )
+) else if %1==%hospitalWorkflowBatch04MainlineTestsJobName% (
+    if "%majorVersion%"=="2" (
+        %nunitExecutable% /work:%nunitOutputFolder% %hospitalWorkflowBatch04MainlineTestsDll% /include:%hospitalWorkflowBatch04MainlineTestsIncludeCategories%
+    ) else (
+        setlocal enabledelayedexpansion
+        call :buildWhereClause %hospitalWorkflowBatch04MainlineTestsIncludeCategories%
+        %nunitExecutable% %hospitalWorkflowBatch04MainlineTestsDll% --where "!whereClause!" --result="%nunitOutputFolder%\TestResult.xml;format=nunit3"
+        endlocal
+    )
+) else if %1==%hospitalWorkflowMasterBatch01MainlineTestsJobName% (
+    if "%majorVersion%"=="2" (
+        %nunitExecutable% /work:%nunitOutputFolder% %hospitalWorkflowMasterBatch01MainlineTestsDll% /include:%hospitalWorkflowMasterBatch01MainlineTestsIncludeCategories%
+    ) else (
+        setlocal enabledelayedexpansion
+        call :buildWhereClause %hospitalWorkflowMasterBatch01MainlineTestsIncludeCategories%
+        %nunitExecutable% %hospitalWorkflowMasterBatch01MainlineTestsDll% --where "!whereClause!" --result="%nunitOutputFolder%\TestResult.xml;format=nunit3"
+        endlocal
+    )
+) else if %1==%hospitalWorkflowBatch01Sequioa% (
+    if "%majorVersion%"=="2" (
+        %nunitExecutable% /work:%nunitOutputFolder% %hospitalWorkflowBatch01SequioaTestsDll% /include:%hospitalWorkflowBatch01SequioaTestsIncludeCategories%
+    ) else (
+        setlocal enabledelayedexpansion
+        call :buildWhereClause %hospitalWorkflowBatch01SequioaTestsIncludeCategories%
+        %nunitExecutable% %hospitalWorkflowBatch01SequioaTestsDll% --where "!whereClause!" --result="%nunitOutputFolder%\TestResult.xml;format=nunit3"
+        endlocal
+    )
+) else if %1==%hospitalWorkflowBatch01MainlineDailyTestsJobName% (
+    if "%majorVersion%"=="2" (
+        %nunitExecutable% /work:%nunitOutputFolder% %hospitalWorkflowBatch01MainlineDailyTestsDll% /include:%hospitalWorkflowBatch01MainlineDailyTestsIncludeCategories%
+    ) else (
+        setlocal enabledelayedexpansion
+        call :buildWhereClause %hospitalWorkflowBatch01MainlineDailyTestsIncludeCategories%
+        %nunitExecutable% %hospitalWorkflowBatch01MainlineDailyTestsDll% --where "!whereClause!" --result="%nunitOutputFolder%\TestResult.xml;format=nunit3"
+        endlocal
+    )
+) else if %1==%iXrayProcedureTestJobName% (
+    if "%majorVersion%"=="2" (
+         %nunitExecutable% /work:%nunitOutputFolder% %iXrayProcedureTestDll% /include:%iXrayProcedureTestIncludeCategories%
+    ) else (
+        setlocal enabledelayedexpansion
+        call :buildWhereClause %iXrayProcedureTestIncludeCategories%
+        %nunitExecutable% %iXrayProcedureTestDll% --where "!whereClause!" --result="%nunitOutputFolder%\TestResult.xml;format=nunit3"
+        endlocal
+    )
+) else if %1==%iProcedureMainlineTestsJobName% (
+    if "%majorVersion%"=="2" (
+         %nunitExecutable% /work:%nunitOutputFolder% %iProcedureMainlineTestsDll% /include:%iProcedureMainlineTestsIncludeCategories%
+    ) else (
+        setlocal enabledelayedexpansion
+        call :buildWhereClause %iProcedureMainlineTestsIncludeCategories%
+        %nunitExecutable% %iProcedureMainlineTestsDll% --where "!whereClause!" --result="%nunitOutputFolder%\TestResult.xml;format=nunit3"
+        endlocal
+    )
+) else if %1==%iXrayProcedureExecutionBatch1JobName% (
+    if "%majorVersion%"=="2" (
+         %nunitExecutable% /work:%nunitOutputFolder% %iXrayProcedureExecutionBatch1TestDll% /include:%iXrayProcedureExecutionBatch1IncludeCategories%
+    ) else (
+        setlocal enabledelayedexpansion
+        call :buildWhereClause %iXrayProcedureExecutionBatch1IncludeCategories%
+        %nunitExecutable% %iXrayProcedureExecutionBatch1TestDll% --where "!whereClause!" --result="%nunitOutputFolder%\TestResult.xml;format=nunit3"
+        endlocal
+    )
+) else if %1==%iXrayProcedureExecutionBatch2JobName% (
+    if "%majorVersion%"=="2" (
+         %nunitExecutable% /work:%nunitOutputFolder% %iXrayProcedureExecutionBatch2TestDll% /include:%iXrayProcedureExecutionBatch2IncludeCategories%
+    ) else (
+        setlocal enabledelayedexpansion
+        call :buildWhereClause %iXrayProcedureExecutionBatch2IncludeCategories%
+        %nunitExecutable% %iXrayProcedureExecutionBatch2TestDll% --where "!whereClause!" --result="%nunitOutputFolder%\TestResult.xml;format=nunit3"
+        endlocal
+    )
+) else if %1==%RegressionTestJobName% (
+    if "%majorVersion%"=="2" (
+         %nunitExecutable% /work:%nunitOutputFolder% %RegressionTestDll% /include:%RegressionTestIncludeCategories%
+    ) else (
+        setlocal enabledelayedexpansion
+        call :buildWhereClause %RegressionTestIncludeCategories%
+        %nunitExecutable% %RegressionTestDll% --where "!whereClause!" --result="%nunitOutputFolder%\TestResult.xml;format=nunit3"
+        endlocal
+    )
+) else if %1==%ServiceWorkFlowMainlineTestsJobName% (
+    if "%majorVersion%"=="2" (
+        %nunitExecutable% /work:%nunitOutputFolder% %ServiceWorkFlowMainlineTestsDll% /include:%ServiceWorkFlowMainlineTestsIncludeCategories%
+    ) else (
+        setlocal enabledelayedexpansion
+        call :buildWhereClause %ServiceWorkFlowMainlineTestsIncludeCategories%
+        %nunitExecutable% %ServiceWorkFlowMainlineTestsDll% --where "!whereClause!" --result="%nunitOutputFolder%\TestResult.xml;format=nunit3"
+        endlocal
+    )
+) else if %1==%ServiceWorkFlowBatch01MainlineTestsJobName% (
+    if "%majorVersion%"=="2" (
+        %nunitExecutable% /work:%nunitOutputFolder% %ServiceWorkFlowBatch01MainlineTestsDll% /include:%ServiceWorkFlowBatch01MainlineTestsIncludeCategories%
+    ) else (
+        setlocal enabledelayedexpansion
+        call :buildWhereClause %ServiceWorkFlowBatch01MainlineTestsIncludeCategories%
+        %nunitExecutable% %ServiceWorkFlowBatch01MainlineTestsDll% --where "!whereClause!" --result="%nunitOutputFolder%\TestResult.xml;format=nunit3"
+        endlocal
+    )
+) else if %1==%ServiceWorkFlowBatch02MainlineTestsJobName% (
+    if "%majorVersion%"=="2" (
+        %nunitExecutable% /work:%nunitOutputFolder% %ServiceWorkFlowBatch02MainlineTestsDll% /include:%ServiceWorkFlowBatch02MainlineTestsIncludeCategories%
+    ) else (
+        setlocal enabledelayedexpansion
+        call :buildWhereClause %ServiceWorkFlowBatch02MainlineTestsIncludeCategories%
+        %nunitExecutable% %ServiceWorkFlowBatch02MainlineTestsDll% --where "!whereClause!" --result="%nunitOutputFolder%\TestResult.xml;format=nunit3"
+        endlocal
+    )
+) else if %1==%ServiceWorkFlowBatch03MainlineTestsJobName% (
+    if "%majorVersion%"=="2" (
+        %nunitExecutable% /work:%nunitOutputFolder% %ServiceWorkFlowBatch03MainlineTestsDll% /include:%ServiceWorkFlowBatch03MainlineTestsIncludeCategories%
+    ) else (
+        setlocal enabledelayedexpansion
+        call :buildWhereClause %ServiceWorkFlowBatch03MainlineTestsIncludeCategories%
+        %nunitExecutable% %ServiceWorkFlowBatch03MainlineTestsDll% --where "!whereClause!" --result="%nunitOutputFolder%\TestResult.xml;format=nunit3"
+        endlocal
+    )
+) else if %1==%ServiceWorkFlowBatch04MainlineTestsJobName% (
+    if "%majorVersion%"=="2" (
+        %nunitExecutable% /work:%nunitOutputFolder% %ServiceWorkFlowBatch04MainlineTestsDll% /include:%ServiceWorkFlowBatch04MainlineTestsIncludeCategories%
+    ) else (
+        setlocal enabledelayedexpansion
+        call :buildWhereClause %ServiceWorkFlowBatch04MainlineTestsIncludeCategories%
+        %nunitExecutable% %ServiceWorkFlowBatch04MainlineTestsDll% --where "!whereClause!" --result="%nunitOutputFolder%\TestResult.xml;format=nunit3"
+        endlocal
+    )
+) else if %1==%ServiceWorkFlowBatch05MainlineTestsJobName% (
+    if "%majorVersion%"=="2" (
+        %nunitExecutable% /work:%nunitOutputFolder% %ServiceWorkFlowBatch05MainlineTestsDll% /include:%ServiceWorkFlowBatch05MainlineTestsIncludeCategories%
+    ) else (
+        setlocal enabledelayedexpansion
+        call :buildWhereClause %ServiceWorkFlowBatch05MainlineTestsIncludeCategories%
+        %nunitExecutable% %ServiceWorkFlowBatch05MainlineTestsDll% --where "!whereClause!" --result="%nunitOutputFolder%\TestResult.xml;format=nunit3"
+        endlocal
+    )
+) else if %1==%ServiceWorkFlowBatch06MainlineTestsJobName% (
+    if "%majorVersion%"=="2" (
+        %nunitExecutable% /work:%nunitOutputFolder% %ServiceWorkFlowBatch06MainlineTestsDll% /include:%ServiceWorkFlowBatch06MainlineTestsIncludeCategories%
+    ) else (
+        setlocal enabledelayedexpansion
+        call :buildWhereClause %ServiceWorkFlowBatch06MainlineTestsIncludeCategories%
+        %nunitExecutable% %ServiceWorkFlowBatch06MainlineTestsDll% --where "!whereClause!" --result="%nunitOutputFolder%\TestResult.xml;format=nunit3"
+        endlocal
+    )
+) else if %1==%ServiceWorkFlowBatch07MainlineTestsJobName% (
+    if "%majorVersion%"=="2" (
+        %nunitExecutable% /work:%nunitOutputFolder% %ServiceWorkFlowBatch07MainlineTestsDll% /include:%ServiceWorkFlowBatch07MainlineTestsIncludeCategories%
+    ) else (
+        setlocal enabledelayedexpansion
+        call :buildWhereClause %ServiceWorkFlowBatch07MainlineTestsIncludeCategories%
+        %nunitExecutable% %ServiceWorkFlowBatch07MainlineTestsDll% --where "!whereClause!" --result="%nunitOutputFolder%\TestResult.xml;format=nunit3"
+        endlocal
+    )
+) else if %1==%ServiceWorkFlowBatch01SequioaTestsJobName% (
+    if "%majorVersion%"=="2" (
+        %nunitExecutable% /work:%nunitOutputFolder% %ServiceWorkFlowBatch01SequioaTestsDll% /include:%ServiceWorkFlowBatch01SequioaTestsIncludeCategories%
+    ) else (
+        setlocal enabledelayedexpansion
+        call :buildWhereClause %ServiceWorkFlowBatch01SequioaTestsIncludeCategories%
+        %nunitExecutable% %ServiceWorkFlowBatch01SequioaTestsDll% --where "!whereClause!" --result="%nunitOutputFolder%\TestResult.xml;format=nunit3"
+        endlocal
+    )
+) else if %1==%ServiceWorkFlowBatch02SequioaTestsJobName% (
+    if "%majorVersion%"=="2" (
+        %nunitExecutable% /work:%nunitOutputFolder% %ServiceWorkFlowBatch02SequioaTestsDll% /include:%ServiceWorkFlowBatch02SequioaTestsIncludeCategories%
+    ) else (
+        setlocal enabledelayedexpansion
+        call :buildWhereClause %ServiceWorkFlowBatch02SequioaTestsIncludeCategories%
+        %nunitExecutable% %ServiceWorkFlowBatch02SequioaTestsDll% --where "!whereClause!" --result="%nunitOutputFolder%\TestResult.xml;format=nunit3"
+        endlocal
+    )
+) else if %1==%ServiceWorkFlowForNightly% (
+    if "%majorVersion%"=="2" (
+        %nunitExecutable% /work:%nunitOutputFolder% %ServiceWorkFlowForNightlyTestsDll% /include:%ServiceWorkFlowForNightlyTestsIncludeCategories%
+    ) else (
+        setlocal enabledelayedexpansion
+        call :buildWhereClause %ServiceWorkFlowForNightlyTestsIncludeCategories%
+        %nunitExecutable% %ServiceWorkFlowForNightlyTestsDll% --where "!whereClause!" --result="%nunitOutputFolder%\TestResult.xml;format=nunit3"
+        endlocal
+    )
+) else if %1==%ServiceWorkFlowTestJobName% (
+    if "%majorVersion%"=="2" (
+        %nunitExecutable% /work:%nunitOutputFolder% %ServiceWorkFlowTestDll% /include:%ServiceWorkFlowIncludeCategories%
+    ) else (
+        setlocal enabledelayedexpansion
+        call :buildWhereClause %ServiceWorkFlowIncludeCategories%
+        %nunitExecutable% %ServiceWorkFlowTestDll% --where "!whereClause!" --result="%nunitOutputFolder%\TestResult.xml;format=nunit3"
+        endlocal
+    )
+) else if %1==%ScreensaverConfidenceTestJobName% (
+    if "%majorVersion%"=="2" (
+        %nunitExecutable% /work:%nunitOutputFolder% %ScreensaverConfidenceTestDll% /include:%ScreensaverConfidenceIncludeCategories%
+    ) else (
+        setlocal enabledelayedexpansion
+        call :buildWhereClause %ScreensaverConfidenceIncludeCategories%
+        %nunitExecutable% %ScreensaverConfidenceTestDll% --where "!whereClause!" --result="%nunitOutputFolder%\TestResult.xml;format=nunit3"
+        endlocal
+    )
+) else if %~1==%ResetHardwareJobName% (
+    if "%majorVersion%"=="2" (
+        %nunitExecutable% /work:%nunitOutputFolder% %ResetHardwareDll% /include:%ResetHardwareIncludeCategories%
+    ) else (
+        setlocal enabledelayedexpansion
+        call :buildWhereClause %ResetHardwareIncludeCategories%
+        %nunitExecutable% %ResetHardwareDll% --where "!whereClause!" --result="%nunitOutputFolder%\TestResult.xml;format=nunit3"
+        endlocal
+    )
+) else if %1==%LicensesMainTestJobName% (
+    if "%majorVersion%"=="2" (
+        %nunitExecutable% /work:%nunitOutputFolder% %LicensesMainTestDll% /include:%LicensesMainIncludeCategories%
+    ) else (
+        setlocal enabledelayedexpansion
+        call :buildWhereClause %LicensesMainIncludeCategories%
+        %nunitExecutable% %LicensesMainTestDll% --where "!whereClause!" --result="%nunitOutputFolder%\TestResult.xml;format=nunit3"
+        endlocal
+    )
+) else if "%1"=="%ViewingMainTestJobName%" (
+
+    setlocal enabledelayedexpansion
+
+    REM Remove old quotes if already present
+    set "ViewingMainIncludeCategories=!ViewingMainIncludeCategories:"=!"
+
+    
+   REM =====================================================
+   REM Capture everything after JobName
+  REM =====================================================
+
+  set "fullExpression=%*"
+
+   REM Remove JobName from beginning
+  set "fullExpression=!fullExpression:*%1 =!"
+
+  REM =====================================================
+  REM If only JobName passed, make empty
+  REM =====================================================
+
+ if /I "!fullExpression!"=="%1" (
+    set "fullExpression="
+ )
+
+ echo FullExpression: !fullExpression!
+
+    if not "!fullExpression!"=="" (
+
+        echo Custom category provided:!fullExpression!
+
+        REM =====================================================
+        REM Check whether FE sent advanced NUnit expression
+        REM =====================================================
+
+        set "isAdvanced=0"
+
+       echo(!fullExpression! | find /I " and " >nul && set "isAdvanced=1"
+       echo(!fullExpression! | find /I " or " >nul && set "isAdvanced=1"
+       echo(!fullExpression! | find /I "=~" >nul && set "isAdvanced=1"
+
+        if "!isAdvanced!"=="1" (
+
+            REM Advanced NUnit expression mode
+            set "whereClause=(cat =~ 'Test.PreLoop.Generic') or (!fullExpression!) or (cat =~ 'Test.PostLoop.Generic')"
+            echo [INFO] Advanced expression detected
+
+        ) else (
+
+            REM Simple category mode
+            REM Example:
+            REM ImageDisplay
+            REM RunSubtraction
+
+            set "ViewingMainIncludeCategories=Test.PreLoop.Generic,!fullExpression!,Test.PostLoop.Generic"
+            echo Categories updated
+            call :buildWhereClause "!ViewingMainIncludeCategories!"
+        )
+
+    ) else (
+
+        echo Default categories will be used
+        call :buildWhereClause "!ViewingMainIncludeCategories!"
+    )
+
+    echo [INFO] Final Where Clause: !whereClause!
+
+    REM =====================================================
+    REM NUnit 2
+    REM =====================================================
+
+    if "%majorVersion%"=="2" (
+
+        %nunitExecutable% ^
+        /work:%nunitOutputFolder% ^
+        %ViewingMainTestDll% ^
+        /include:"!ViewingMainIncludeCategories!"
+
+    ) else (
+
+        REM =====================================================
+        REM NUnit 3
+        REM =====================================================
+
+        %nunitExecutable% ^
+        %ViewingMainTestDll% ^
+        --where "!whereClause!" ^
+        --result="%nunitOutputFolder%\TestResult.xml;format=nunit3"
+    )
+
+    endlocal
+) else if %1==%ProcessingMainTestJobName% (
+    if "%majorVersion%"=="2" (
+        %nunitExecutable% /work:%nunitOutputFolder% %ProcessingMainTestDll% /include:%ProcessingMainIncludeCategories%
+    ) else (
+        setlocal enabledelayedexpansion
+        call :buildWhereClause %ProcessingMainIncludeCategories%
+        %nunitExecutable% %ProcessingMainTestDll% --where "!whereClause!" --result="%nunitOutputFolder%\TestResult.xml;format=nunit3"
+        endlocal
+    )
+) else if %1==%LicensesMainlineDailyTestJobName% (
+    if "%majorVersion%"=="2" (
+        %nunitExecutable% /work:%nunitOutputFolder% %LicensesMainlineDailyTestDll% /include:%LicensesMainlineDailyIncludeCategories%
+    ) else (
+        setlocal enabledelayedexpansion
+        call :buildWhereClause %LicensesMainlineDailyIncludeCategories%
+        %nunitExecutable% %LicensesMainlineDailyTestDll% --where "!whereClause!" --result="%nunitOutputFolder%\TestResult.xml;format=nunit3"
+        endlocal
+    )
+) else if %1==%ViewingMainlineDailyTestJobName% (
+     if not "%2"=="" (
+        set ViewingMainlineDailyIncludeCategories=Test.PreLoop.Generic,%2,Test.PostLoop.Generic
+    )
+    if "%majorVersion%"=="2" (
+        %nunitExecutable% /work:%nunitOutputFolder% %ViewingMainlineDailyTestDll% /include:%ViewingMainlineDailyIncludeCategories%
+    ) else (
+        setlocal enabledelayedexpansion
+        call :buildWhereClause %ViewingMainlineDailyIncludeCategories%
+        %nunitExecutable% %ViewingMainlineDailyTestDll% --where "!whereClause!" --result="%nunitOutputFolder%\TestResult.xml;format=nunit3"
+        endlocal
+    )
+) else if %1==%FlexibleViewingMainlineDailyTestJobName% (
+    if "%majorVersion%"=="2" (
+        %nunitExecutable% /work:%nunitOutputFolder% %FlexibleViewingMainlineDailyTestDll% /include:%FlexibleViewingMainlineDailyIncludeCategories%
+    ) else (
+        setlocal enabledelayedexpansion
+        call :buildWhereClause %FlexibleViewingMainlineDailyIncludeCategories%
+        %nunitExecutable% %FlexibleViewingMainlineDailyTestDll% --where "!whereClause!" --result="%nunitOutputFolder%\TestResult.xml;format=nunit3"
+        endlocal
+    )
+) else if %1==%FlexibleViewingMainlineTestJobName% (
+    if "%majorVersion%"=="2" (
+        %nunitExecutable% /work:%nunitOutputFolder% %FlexibleViewingMainlineTestDll% /include:%FlexibleViewingMainlineIncludeCategories%
+    ) else (
+        setlocal enabledelayedexpansion
+        call :buildWhereClause %FlexibleViewingMainlineIncludeCategories%
+        %nunitExecutable% %FlexibleViewingMainlineTestDll% --where "!whereClause!" --result="%nunitOutputFolder%\TestResult.xml;format=nunit3"
+        endlocal
+    )
+) else if %1==%iXrayControlBatch1JobName% (
+    if "%majorVersion%"=="2" (
+        %nunitExecutable% /work:%nunitOutputFolder% %iXrayControlBatch1TestDll% /include:%iXrayControlBatch1IncludeCategories%
+    ) else (
+        setlocal enabledelayedexpansion
+        call :buildWhereClause %iXrayControlBatch1IncludeCategories%
+        %nunitExecutable% %iXrayControlBatch1TestDll% --where "!whereClause!" --result="%nunitOutputFolder%\TestResult.xml;format=nunit3"
+        endlocal
+    )
+) else if %1==%iXrayControlBatch2JobName% (
+    if "%majorVersion%"=="2" (
+        %nunitExecutable% /work:%nunitOutputFolder% %iXrayControlBatch2TestDll% /include:%iXrayControlBatch2IncludeCategories%
+    ) else (
+        setlocal enabledelayedexpansion
+        call :buildWhereClause %iXrayControlBatch2IncludeCategories%
+        %nunitExecutable% %iXrayControlBatch2TestDll% --where "!whereClause!" --result="%nunitOutputFolder%\TestResult.xml;format=nunit3"
+        endlocal
+    )
+) else if %1==%iXrayControlBatch3JobName% (
+    if "%majorVersion%"=="2" (
+        %nunitExecutable% /work:%nunitOutputFolder% %iXrayControlBatch3TestDll% /include:%iXrayControlBatch3IncludeCategories%
+    ) else (
+        setlocal enabledelayedexpansion
+        call :buildWhereClause %iXrayControlBatch3IncludeCategories%
+        %nunitExecutable% %iXrayControlBatch3TestDll% --where "!whereClause!" --result="%nunitOutputFolder%\TestResult.xml;format=nunit3"
+        endlocal
+    )
+) else if %1==%iXrayControlBatch4JobName% (
+    if "%majorVersion%"=="2" (
+        %nunitExecutable% /work:%nunitOutputFolder% %iXrayControlBatch4TestDll% /include:%iXrayControlBatch4IncludeCategories%
+    ) else (
+        setlocal enabledelayedexpansion
+        call :buildWhereClause %iXrayControlBatch4IncludeCategories%
+        %nunitExecutable% %iXrayControlBatch4TestDll% --where "!whereClause!" --result="%nunitOutputFolder%\TestResult.xml;format=nunit3"
+        endlocal
+    )
+) else if %1==%iXrayControlBatch5JobName% (
+    if "%majorVersion%"=="2" (
+        %nunitExecutable% /work:%nunitOutputFolder% %iXrayControlBatch5TestDll% /include:%iXrayControlBatch5IncludeCategories%
+    ) else (
+        setlocal enabledelayedexpansion
+        call :buildWhereClause %iXrayControlBatch5IncludeCategories%
+        %nunitExecutable% %iXrayControlBatch5TestDll% --where "!whereClause!" --result="%nunitOutputFolder%\TestResult.xml;format=nunit3"
+        endlocal
+    )
+) else if %1==%iXrayControlBatch6JobName% (
+    if "%majorVersion%"=="2" (
+        %nunitExecutable% /work:%nunitOutputFolder% %iXrayControlBatch6TestDll% /include:%iXrayControlBatch6IncludeCategories%
+    ) else (
+        setlocal enabledelayedexpansion
+        call :buildWhereClause %iXrayControlBatch6IncludeCategories%
+        %nunitExecutable% %iXrayControlBatch6TestDll% --where "!whereClause!" --result="%nunitOutputFolder%\TestResult.xml;format=nunit3"
+        endlocal
+    )
+) else if %1==%iXrayControlBatch7JobName% (
+    if "%majorVersion%"=="2" (
+        %nunitExecutable% /work:%nunitOutputFolder% %iXrayControlBatch7TestDll% /include:%iXrayControlBatch7IncludeCategories%
+    ) else (
+        setlocal enabledelayedexpansion
+        call :buildWhereClause %iXrayControlBatch7IncludeCategories%
+        %nunitExecutable% %iXrayControlBatch7TestDll% --where "!whereClause!" --result="%nunitOutputFolder%\TestResult.xml;format=nunit3"
+        endlocal
+    )
+) else if %1==%iXrayControlMainJobName% (
+    if "%majorVersion%"=="2" (
+        %nunitExecutable% /work:%nunitOutputFolder% %iXrayControlMainTestDll% /include:%iXrayControlMainIncludeCategories%
+    ) else (
+        setlocal enabledelayedexpansion
+        call :buildWhereClause %iXrayControlMainIncludeCategories%
+        %nunitExecutable% %iXrayControlMainTestDll% --where "!whereClause!" --result="%nunitOutputFolder%\TestResult.xml;format=nunit3"
+        endlocal
+    )
+) else (
+    echo Requested test `%~1` not defined, please define in generic approach or correct spelling.
+)
+
+goto :eof
+REM ===============================
+REM Build Where Clause Function
+REM ===============================
+:buildWhereClause
+set "includes=%~1"
+set "excludes=%~2"
+
+:: Remove quotes if any
+set "includes=!includes:"=!"
+if not "!excludes!"=="" (
+    set "excludes=!excludes:"=!"
+)
+
+:: Convert comma-separated includes into NUnit3 regex format
+if defined includes (
+    set "includes=!includes:,=|!"
+    set "whereClause=cat =~ '!includes!'"
+    echo [DEBUG] Converted includes to regex: !whereClause!
+)
+
+:: Handle excludes (each becomes AND condition)
+if defined excludes (
+    :: Replace commas with spaces for the FOR loop
+    set "excludesList=!excludes:,= !"
+    for %%E in (!excludesList!) do (
+        if defined whereClause (
+            set "whereClause=!whereClause! and cat ^!= '%%E'"
+        ) else (
+            set "whereClause=cat ^!= '%%E'"
+        )
+    )
+)
+goto :eof

@@ -1,0 +1,14 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<ThirdPartyInfo>
+  <Product>
+    <Name>NUnit</Name>
+    <Version>2.6.2</Version>
+    <Supplier>http://www.nunit.org/</Supplier>
+    <Type></Type>
+    <OSS>No</OSS>
+    <InProduct>No</InProduct>
+    <InProductDoc></InProductDoc>
+    <SAPReference></SAPReference>
+    <ValidationInfo>DEP110021</ValidationInfo>
+  </Product>
+</ThirdPartyInfo>

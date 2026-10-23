@@ -1,0 +1,18 @@
+2025-12-23 14:38:29,907  - [INFO] RV&S Companion Tool Version: 1.0.0.0
+ 2025-12-23 14:38:29,956  - [INFO] Connecting to the server ilmt.igts.ta.philips.com with username :nlybstqvp4-sys134.
+ 2025-12-23 14:38:32,131  - [INFO] Connecting.
+ 2025-12-23 14:38:46,288  - [INFO] Connection to the server ilmt.igts.ta.philips.com:7001 is successful.
+ 2025-12-23 14:38:46,674  - [INFO] Please refer RvSTestResultUploaderAppLogs for the execution output.
+ 2025-12-23 14:38:46,674  - [INFO] Reading the inputs.
+ 2025-12-23 14:38:46,839  - [INFO] Starting a Test Session named "NormComplianceBatch1E2E_Technopolis5_0.0.0_2025-12-23_14-38-17".
+ 2025-12-23 14:38:47,039  - [INFO] Test Session Name: NormComplianceBatch1E2E_Technopolis5_0.0.0_2025-12-23_14-38-17, Id: 736799
+ 2025-12-23 14:38:47,039  - [INFO] Test Session "NormComplianceBatch1E2E_Technopolis5_0.0.0_2025-12-23_14-38-17" has started.
+ 2025-12-23 14:38:47,040  - [INFO] Extracting the test cases.
+ 2025-12-23 14:38:47,040  - [INFO] Getting the executed tests from ResultViewer API.
+ 2025-12-23 14:38:47,276  - [DEBUG] Deserializing the response.
+ 2025-12-23 14:38:47,322  - [INFO] Fetching the system information from SystemInfo API.
+ 2025-12-23 14:38:47,346  - [ERROR] The remote server returned an error: (500) Internal Server Error.
+ 2025-12-23 14:38:47,346  - [INFO] System info is not available in the source.
+ 2025-12-23 14:38:47,346  - [INFO] There are no matching test cases available in the Winchill RV&S.
+ 2025-12-23 14:38:47,426  - [INFO] Disconnected from windchill RV&S successfully.
+ 

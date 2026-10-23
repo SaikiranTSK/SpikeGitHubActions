@@ -1,0 +1,57 @@
+// 2>nul||@goto :batch
+/*
+:batch
+@echo off
+setlocal
+
+:: find csc.exe
+set "csc="
+set "speech="
+for /r "%SystemRoot%\Microsoft.NET\Framework\" %%# in ("*csc.exe") do  set "csc=%%#"
+for /r "%SystemRoot%\Microsoft.NET\Framework\" %%# in ("*System.Windows.Forms.dll") do  set "forms=%%#"
+
+if not exist "%csc%" (
+   echo no .net framework installed
+   exit /b 10
+)
+
+if exist "%temp%\%~n0.exe" del /F /Q "%temp%\%~n0.exe"
+if not exist "%temp%\%~n0.exe" (
+   call %csc% /reference:"%forms%" /nologo /w:0 /out:"%temp%\%~n0.exe" "%~dpsfnx0" || (
+      exit /b %errorlevel% 
+   )
+)
+%temp%\%~n0.exe %1 %2
+if exist "%temp%\%~n0.exe" del /F /Q "%temp%\%~n0.exe"
+
+endlocal & exit /b %errorlevel%
+
+*/
+
+using System;
+using System.Runtime.InteropServices;
+using System.Threading;
+using System.Windows.Forms;
+using System.Drawing;
+
+class QE
+{
+   [STAThread]
+    static void Main(string[] args)
+    {
+        Application.EnableVisualStyles();
+        Application.SetCompatibleTextRenderingDefault(false);
+        var form = new Form();
+        form.Text = "Hello World";
+        var lbSystem = new Label{
+            Parent = form,
+            Text = "Hello World",
+            Top = 0,
+            Left = 0,
+            Height = 21,
+            Width = 150,
+            TextAlign = ContentAlignment.MiddleLeft
+        };
+        Application.Run(form);      
+    }
+}

@@ -1,0 +1,19 @@
+2026-01-07 08:16:53,155  - [INFO] RV&S Companion Tool Version: 1.0.0.0
+ 2026-01-07 08:16:53,188  - [INFO] Connecting to the server ilmt.igts.ta.philips.com with username :nlybstqvp4-sys134.
+ 2026-01-07 08:16:54,346  - [INFO] Connecting.
+ 2026-01-07 08:17:08,217  - [INFO] Connection to the server ilmt.igts.ta.philips.com:7001 is successful.
+ 2026-01-07 08:17:08,587  - [INFO] Please refer RvSTestResultUploaderAppLogs for the execution output.
+ 2026-01-07 08:17:08,588  - [INFO] Reading the inputs.
+ 2026-01-07 08:17:08,738  - [INFO] Starting a Test Session named "NormComplianceBatch1E2E_Technopolis6_99.0.307_2025-12-23_16-12-23".
+ 2026-01-07 08:17:08,904  - [INFO] Test Session Name: NormComplianceBatch1E2E_Technopolis6_99.0.307_2025-12-23_16-12-23, Id: 742270
+ 2026-01-07 08:17:08,904  - [INFO] Test Session "NormComplianceBatch1E2E_Technopolis6_99.0.307_2025-12-23_16-12-23" has started.
+ 2026-01-07 08:17:08,905  - [INFO] Extracting the test cases.
+ 2026-01-07 08:17:08,905  - [INFO] Getting the executed tests from ResultViewer API.
+ 2026-01-07 08:17:09,064  - [DEBUG] Deserializing the response.
+ 2026-01-07 08:17:09,102  - [INFO] Fetching the system information from SystemInfo API.
+ 2026-01-07 08:17:09,126  - [DEBUG] Deserializing the response.
+ 2026-01-07 08:17:09,130  - [INFO] Searching the test cases in Windchill RV&S.
+ 2026-01-07 08:17:09,312  - [INFO] Retrieving Test cases from the Test Protocol Document Id "668423" in Windchill RV&S Started.
+
+ 2026-01-07 08:17:32,912  - [INFO] Disconnected from windchill RV&S successfully.
+ 

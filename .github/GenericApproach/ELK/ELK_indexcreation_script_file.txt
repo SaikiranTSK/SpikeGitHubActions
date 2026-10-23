@@ -1,0 +1,239 @@
+This below syntax's is meant for just refference not to use as it is 
+PUT /system_performance
+{
+    "settings": { "index": {
+      "number_of_shards": 1,
+      "number_of_replicas": 0
+    }
+      
+    },
+    "mappings": {
+      "properties": {
+        "TestName": {
+          "type": "keyword"
+        },
+        "Name": {
+          "type": "keyword"
+        },
+        "FeatureName": {
+          "type": "keyword"
+        },
+        "FeatureOutcome": {
+          "type": "text"
+        },
+        "NumberOfMeasurements": {
+          "type": "long"
+        },
+        "NumberOfWarnings": {
+          "type": "long"
+        },
+        "AverageMeasurementValue": {
+          "type": "double"
+        },
+        "MinmumMeasurementValue": {
+          "type": "long"
+        },
+        "MaximumMeasurementValue": {
+          "type": "long"
+        },
+        "WarningLimitValue": {
+          "type": "long"
+        },
+        "FailureLimitValue": {
+          "type": "long"
+        },
+        "FailureAverageLimitValue": {
+          "type": "long"
+        },
+        "MinimumNumberOfMeasurement": {
+          "type": "long"
+        },
+        "ValueLimit": {
+          "type": "double"
+        },
+        "MeasurementValue": {
+          "type": "long"
+        },
+        "MeasurementOutcome": {
+          "type": "text"
+        },
+        "Stm": {
+          "type": "keyword"
+        },
+        "BayName": {
+          "type": "keyword"
+        },
+        "Pdc": {
+          "type": "keyword"
+        },
+        "SystemType": {
+          "type": "keyword"
+        },
+        "Family": {
+          "type": "keyword"
+        },
+        "FrontalStandType": {
+          "type": "keyword"
+        },
+        "LateralStandType": {
+          "type": "keyword"
+        },
+        "FrontalDetector": {
+          "type": "keyword"
+        },
+        "LateralDetector": {
+          "type": "keyword"
+        },
+        "TableType": {
+          "type": "keyword"
+        },
+        "VideoType": {
+          "type": "keyword"
+        },
+        "DateAndTime": {
+          "type": "date"
+        },
+        "MonoplaneOrBiplane": {
+          "type": "keyword"
+		  },
+        "Path": {
+          "type": "keyword"
+        }
+      }
+    }
+  } 
+  DELETE /system_performance
+  GET /system_performance/_mapping
+  
+  PUT /system_performance/_mapping
+{
+  "properties": {
+    "Path": {
+          "type": "keyword"
+        }
+  }
+}
+
+GET /system_performance/_search
+{
+  "query": {"match_all": {}}
+}
+
+POST /crtdataindex/_update_by_query
+{
+  "query": {
+    "bool": {
+        "must_not": {
+            "exists": {
+                "field": "MinimumNumberOfMeasurements"
+            }
+        }
+    }
+  },
+  "script" : {
+    "inline": "ctx._source['MinimumNumberOfMeasurements']= ctx._source.MinimumNumberOfMeasurement; ctx._source.remove(\"MinimumNumberOfMeasurement\");"
+  }
+}
+POST /crtdataindex1809/_update_by_query
+{
+  "query" : {
+        "exists": { "field": "MinimumNumberOfMeasurements.keyword"}},
+  "script" : {
+    "inline": "ctx._source.remove(\"MinimumNumberOfMeasurements.keyword\")"
+  }
+}
+
+POST crtdataindex1809/_update_by_query?conflicts=proceed
+{
+    "script" : "ctx._source.MinimumNumberOfMeasurements.remove('keyword')",
+    "query" : {
+        "exists": { "field": "MinimumNumberOfMeasurements.keyword" }
+    }
+}
+
+POST _reindex
+{  
+  "source": {    "index": "issuedebug"  },
+  "dest": {    "index": "system_performance"  }
+}
+
+GET /crtdataindex123/_search
+{
+  "query": {"match_all": {}}
+}
+
+
+
+
+
+
+GET /kibana_sample_data_ecommerce/_mapping
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+GET /autoteamtrail/_mapping
+
+POST /autoteamtrail/_update_by_query
+{
+  "query" : {
+        "exists": { "field": "Test_Name"}},
+  "script" : {
+    "inline": "ctx._source.remove(\"Test_Name\")"
+  }
+}
+POST /autoteamtrail/_update_by_query
+{
+   "query" : {
+        "exists": { "field": "TableType",
+          "type":"text"
+        }},
+  "script" : {
+    "inline": "ctx._source.remove(\"TableType\")"
+  }
+}
+
+
+PUT autoteamtrail
+{
+  "mappings": {
+    "properties": {
+      "DateandTime": {
+        "type":   "date",
+        "format": "yyyy-MM-dd HH:mm:ss||yyyy-MM-dd||epoch_millis"
+      }
+    }
+  }
+}
+
+ PUT /satheesh/_mapping
+{
+  "properties": {
+    "DateandTime": {
+        "type":   "date",
+        "format": "yyyy-MM-dd HH:mm:ss||yyyy-MM-dd||epoch_millis"
+      }
+  }
+}
+
+
+
+
+
+
+
+
+
+
+
+

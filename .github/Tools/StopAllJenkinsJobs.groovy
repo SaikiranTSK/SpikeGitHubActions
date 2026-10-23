@@ -1,0 +1,12 @@
+import jenkins.model.*
+
+def queue = Jenkins.instance.queue
+
+def ClearBuildQueue() {
+    stage('Clear build queue') {
+        println "Queue contains ${queue.items.length} items"
+				println "Queue cleared"
+    }
+}
+
+return this

@@ -1,0 +1,10 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<ThirdPartyInfo>
+	<Product>
+		<Name>TestCentric</Name>
+		<Version>1.6.4</Version>
+		<Supplier>https://github.com/TestCentric/TestCentricRunner</Supplier>
+		<InProduct>No</InProduct>
+		<ValidationInfo></ValidationInfo>
+	</Product>
+</ThirdPartyInfo>

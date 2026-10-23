@@ -1,0 +1,39 @@
+echo on
+echo %1
+echo %2
+echo %3
+
+set "currentJob=%~2"
+set "testDocId="
+set "basePath=%~3"
+
+for %%A in (
+    "NormComplianceBatch1E2E=668423"
+    "NormComplianceBatch1=681794"
+    "NormComplianceBatch2=681795"
+    "NormComplianceBatch3=681796"
+    "NormComplianceBatch4=681797"
+    "NormComplianceBatch5=681798"
+) do (
+    for /f "tokens=1,2 delims==" %%B in (%%A) do (
+        if /i %currentJob%==%%B set "testDocId=%%C"
+    )
+)
+
+if not defined testDocId (
+    echo No TestDocumentID found for job: %currentJob%
+    exit /b 1
+)
+
+echo Using TestDocumentID: %testDocId%
+echo Base path for side script: %basePath%
+
+set "var1=D:/Jenkins/Tools/RunAsCurrentUser.exe"
+set "var2=%basePath%upload_results_to_RVS_side_pc.cmd"
+set "var3=%1"
+set "var4=%testDocId%"
+set "var5=%basePath%"
+
+set SIDE=%var1% "%var2% %var3% %var4% %var5%"
+
+call %SIDE%

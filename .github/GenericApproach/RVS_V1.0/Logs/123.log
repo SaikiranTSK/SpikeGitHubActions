@@ -1,0 +1,62 @@
+2025-12-24 04:47:08,318  - [INFO] RV&S Companion Tool Version: 1.0.0.0
+ 2025-12-24 04:47:08,368  - [INFO] Connecting to the server ilmt.igts.ta.philips.com with username :nlybstqvp4-sys134.
+ 2025-12-24 04:47:09,537  - [INFO] Connecting.
+ 2025-12-24 04:47:23,680  - [INFO] Connection to the server ilmt.igts.ta.philips.com:7001 is successful.
+ 2025-12-24 04:47:24,135  - [INFO] Please refer RvSTestResultUploaderAppLogs for the execution output.
+ 2025-12-24 04:47:24,135  - [INFO] Reading the inputs.
+ 2025-12-24 04:47:24,285  - [INFO] Starting a Test Session named "NormComplianceBatch1E2E_Technopolis6_99.0.302_2025-12-19_14-18-25".
+ 2025-12-24 04:47:24,726  - [INFO] Test Session Name: NormComplianceBatch1E2E_Technopolis6_99.0.302_2025-12-19_14-18-25, Id: 736801
+ 2025-12-24 04:47:24,727  - [INFO] Test Session "NormComplianceBatch1E2E_Technopolis6_99.0.302_2025-12-19_14-18-25" has started.
+ 2025-12-24 04:47:24,727  - [INFO] Extracting the test cases.
+ 2025-12-24 04:47:24,728  - [INFO] Getting the executed tests from ResultViewer API.
+ 2025-12-24 04:47:25,047  - [DEBUG] Deserializing the response.
+ 2025-12-24 04:47:25,102  - [INFO] Fetching the system information from SystemInfo API.
+ 2025-12-24 04:47:25,125  - [DEBUG] Deserializing the response.
+ 2025-12-24 04:47:25,130  - [INFO] Searching the test cases in Windchill RV&S.
+ 2025-12-24 04:47:25,340  - [INFO] Retrieving Test cases from the Test Protocol Document Id "668423" in Windchill RV&S Started.
+
+ 2025-12-24 04:49:46,594  - [INFO] 
+ Retrieving Test cases from the Test Protocol Document Id "668423" in Windchill RV&S Completed.
+ 2025-12-24 04:49:46,597  - [INFO] Extracting the test steps
+ 2025-12-24 04:49:46,603  - [INFO] Test steps are extracted.
+ 2025-12-24 04:49:46,754  - [INFO] Adding Test Cases to the Test Session Started.
+
+ 2025-12-24 04:49:47,424  - [INFO] 
+ 2025-12-24 04:49:47,424  - [INFO] Adding the test case "TC_SDS.NCDAT.IEC 60601-2-43.203.6.104.FUNCTIONAL TEST.001.F".
+ 2025-12-24 04:49:47,729  - [INFO] Test case "TC_SDS.NCDAT.IEC 60601-2-43.203.6.104.FUNCTIONAL TEST.001.F" is added to test session "NormComplianceBatch1E2E_Technopolis6_99.0.302_2025-12-19_14-18-25".
+ 2025-12-24 04:49:48,427  - [INFO] 
+ 2025-12-24 04:49:48,427  - [INFO] Adding the test case "TC_SDS.NCDAT.IEC 60601-2-43.203.6.104.FUNCTIONAL TEST.001.L".
+ 2025-12-24 04:49:48,713  - [INFO] Test case "TC_SDS.NCDAT.IEC 60601-2-43.203.6.104.FUNCTIONAL TEST.001.L" is added to test session "NormComplianceBatch1E2E_Technopolis6_99.0.302_2025-12-19_14-18-25".
+ 2025-12-24 04:49:49,533  - [INFO] 
+ 2025-12-24 04:49:49,533  - [INFO] Adding the test case "TC_SDS.NCDAT.IEC 60601-2-43.203.6.104.FUNCTIONAL TEST.001.B".
+ 2025-12-24 04:49:49,841  - [INFO] Test case "TC_SDS.NCDAT.IEC 60601-2-43.203.6.104.FUNCTIONAL TEST.001.B" is added to test session "NormComplianceBatch1E2E_Technopolis6_99.0.302_2025-12-19_14-18-25".
+ 2025-12-24 04:49:49,841  - [INFO] 
+Adding Test Cases to the Test Session Completed.
+ 2025-12-24 04:49:49,842  - [INFO] Changing test session "NormComplianceBatch1E2E_Technopolis6_99.0.302_2025-12-19_14-18-25" configurations to "System=Technopolis6(PTM-011)" "SW-HW Version=99.0.302".
+ 2025-12-24 04:49:50,067  - [INFO] Test Session system configuration is updated successfully.
+ 2025-12-24 04:49:50,231  - [INFO] These test environment options will be added to the test session: 
+ 2025-12-24 04:49:50,231  - [INFO] Clea_Floor_LARC_N_FD2015
+ 2025-12-24 04:49:50,231  - [INFO] , 
+ 2025-12-24 04:49:50,231  - [INFO] AD7XT
+ 2025-12-24 04:49:50,231  - [INFO] 
+ 2025-12-24 04:49:50,451  - [INFO] The test environment options "Clea_Floor_LARC_N_FD2015,AD7XT" are added to the test session.
+ 2025-12-24 04:49:50,454  - [INFO] Changing the test session "NormComplianceBatch1E2E_Technopolis6_99.0.302_2025-12-19_14-18-25" status to "InTesting".
+ 2025-12-24 04:49:50,693  - [INFO] Test Session "NormComplianceBatch1E2E_Technopolis6_99.0.302_2025-12-19_14-18-25" status has changed to "InTesting".
+ 2025-12-24 04:49:50,693  - [INFO] Adding Test Results to the Test Session Started.
+
+ 2025-12-24 04:49:50,861  - [INFO] The test case "TC_SDS.NCDAT.IEC 60601-2-43.203.6.104.FUNCTIONAL TEST.001.F" has 4 steps.
+ 2025-12-24 04:49:51,036  - [INFO] Test case "TC_SDS.NCDAT.IEC 60601-2-43.203.6.104.FUNCTIONAL TEST.001.F" is added to the result editor.
+ 2025-12-24 04:49:51,656  - [INFO] The test case "TC_SDS.NCDAT.IEC 60601-2-43.203.6.104.FUNCTIONAL TEST.001.F" has 4 steps.
+ 2025-12-24 04:49:51,873  - [INFO] Test case "TC_SDS.NCDAT.IEC 60601-2-43.203.6.104.FUNCTIONAL TEST.001.F" is updated to the result editor.
+ 2025-12-24 04:49:52,006  - [INFO] The test case "TC_SDS.NCDAT.IEC 60601-2-43.203.6.104.FUNCTIONAL TEST.001.L" has 4 steps.
+ 2025-12-24 04:49:52,131  - [INFO] Test case "TC_SDS.NCDAT.IEC 60601-2-43.203.6.104.FUNCTIONAL TEST.001.L" is added to the result editor.
+ 2025-12-24 04:49:52,747  - [INFO] The test case "TC_SDS.NCDAT.IEC 60601-2-43.203.6.104.FUNCTIONAL TEST.001.L" has 4 steps.
+ 2025-12-24 04:49:52,933  - [INFO] Test case "TC_SDS.NCDAT.IEC 60601-2-43.203.6.104.FUNCTIONAL TEST.001.L" is updated to the result editor.
+ 2025-12-24 04:49:53,064  - [INFO] The test case "TC_SDS.NCDAT.IEC 60601-2-43.203.6.104.FUNCTIONAL TEST.001.B" has 4 steps.
+ 2025-12-24 04:49:53,180  - [INFO] Test case "TC_SDS.NCDAT.IEC 60601-2-43.203.6.104.FUNCTIONAL TEST.001.B" is added to the result editor.
+ 2025-12-24 04:49:53,780  - [INFO] The test case "TC_SDS.NCDAT.IEC 60601-2-43.203.6.104.FUNCTIONAL TEST.001.B" has 4 steps.
+ 2025-12-24 04:49:53,964  - [INFO] Test case "TC_SDS.NCDAT.IEC 60601-2-43.203.6.104.FUNCTIONAL TEST.001.B" is updated to the result editor.
+ 2025-12-24 04:49:53,964  - [INFO] 
+ Adding Test Results to the Test Session Completed.
+ 2025-12-24 04:49:54,026  - [INFO] Disconnected from windchill RV&S successfully.
+ 
