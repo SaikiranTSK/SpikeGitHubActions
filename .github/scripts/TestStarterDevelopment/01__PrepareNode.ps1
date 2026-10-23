@@ -22,8 +22,16 @@ PrintStageHeader 'PREPARE NODE'
 # catchError(SUCCESS, SUCCESS) around each taskkill
 [void](Invoke-Bat 'Kill' 'taskkill /F /IM RunAsCurrentUser.exe')
 [void](Invoke-Bat 'Kill' 'taskkill /F /IM RunInCurrentUser.exe')
-CopyFile ($TSDJenkinsBatchesPath + 'Tools\RunAsCurrentUser.exe') ($TSDDataPath + 'Tools\RunAsCurrentUser.exe')
-CopyFile ($TSDJenkinsBatchesPath + 'Tools\RunInCurrentUser.exe') ($TSDDataPath + 'Tools\RunInCurrentUser.exe')
+foreach ($tool in @(
+    "$TSDToolsPath\RunAsCurrentUser.exe",
+    "$TSDToolsPath\RunInCurrentUser.exe",
+    "$TSDPackagesPath\NUnit 2.6.2\bin\nunit-console-x86.exe",
+    "$TSDPackagesPath\NUnit.org\nunit-console\nunit3-console.exe"
+)) {
+    if (-not (Test-Path -LiteralPath $tool -PathType Leaf)) {
+        throw "Required checked-out tooling is missing: $tool"
+    }
+}
 # loadedStages.TriggerStagePipeline() -> next steps 'Prepare Environment' and 'Execute Tests'
 $global:LASTEXITCODE = 0
 exit 0
