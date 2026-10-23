@@ -5,7 +5,7 @@
 # Each Jenkins stage is one step with the same name, running one numbered script from .github\scripts\TestStarterDevelopment\.
 # Jenkins parameters, types and defaults, except the fixed stages script (SystemName is a free text field there too).
 # Remote trigger (Jenkins authToken): POST /repos/{owner}/{repo}/actions/workflows/TestStarterDevelopment.yml/dispatches.
-# Docs: docs\pipelines\TestStarterDevelopment.md, docs\migration\Family-D-TestStarterDevelopment.md
+# Tooling paths and validation: .github\scripts\TestStarterDevelopment\README.md
 name: TestStarterDevelopment
 run-name: ${{ inputs.SystemName }}
 
@@ -66,9 +66,6 @@ on:
 permissions:
   contents: read
 
-env:
-  BATCHES_SHARE: ${{ vars.BATCHES_SHARE || '\\nlybstqvp4dt7nv\JenkinsBatches' }}
-
 jobs:
   # It will check the Runner was Online."
   check-runner:
@@ -91,9 +88,6 @@ jobs:
         shell: powershell
     env:
       SCRIPTS: ${{ github.workspace }}\.github\scripts\TestStarterDevelopment
-      DATA_PATH: ${{ vars.DATA_PATH || 'D:\Jenkins\' }}
-      # Jenkins env.ServerDataPath (the robocopy lines show the FQDN share)
-      SERVER_DATA_PATH: ${{ vars.SERVER_DATA_PATH || '\\nlybstqvp4dt7nv.code1.emi.philips.com\JenkinsBatches\' }}
       RESULT_VIEWER_URL: ${{ vars.RESULT_VIEWER_URL || 'http://igts-resultviewer.ta.philips.com/#/testrun/' }}
       SYSTEM_NAME: ${{ inputs.SystemName }}
       BATCH: ${{ inputs.Batch }}
@@ -106,7 +100,7 @@ jobs:
       NUNIT_VERSION: ${{ inputs.NUnitVersion }}
       SAVE_SCREENSHOTS_AND_VIDEOS_TO_LOCATION: ${{ inputs.SaveScreenshotsAndVideosToLocation }}
     steps:
-      - name: Get pipeline scripts
+      - name: Get pipeline scripts and tooling
         uses: actions/checkout@v4
         with:
           sparse-checkout: .github
