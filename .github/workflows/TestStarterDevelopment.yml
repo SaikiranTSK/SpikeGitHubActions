@@ -1,8 +1,9 @@
 # GitHub Actions version of the live Jenkins job TestStarterDevelopment (family D).
 # Jenkins: inline pipeline script (copy: Jenkins\Batches\TestStarterDevelopment\TestStarterDevelopment.Jenkinsfile) that loads
-# <DataPath>Batches\TestStarterDevelopment\<GroovyScriptFile> (TestStarterDevelopmentStages.groovy) on the side PC.
+# <DataPath>Batches\TestStarterDevelopment\TestStarterDevelopmentStages.groovy on the side PC.
+# GitHub Actions always uses .github\scripts\Shared\TestStarterDevelopmentStages.ps1.
 # Each Jenkins stage is one step with the same name, running one numbered script from .github\scripts\TestStarterDevelopment\.
-# Same 11 parameters, types and defaults as Jenkins (SystemName is a free text field there too).
+# Jenkins parameters, types and defaults, except the fixed stages script (SystemName is a free text field there too).
 # Remote trigger (Jenkins authToken): POST /repos/{owner}/{repo}/actions/workflows/TestStarterDevelopment.yml/dispatches.
 # Docs: docs\pipelines\TestStarterDevelopment.md, docs\migration\Family-D-TestStarterDevelopment.md
 name: TestStarterDevelopment

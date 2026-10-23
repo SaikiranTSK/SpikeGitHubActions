@@ -2,14 +2,8 @@
 # Inputs come from the job-level env of .github\workflows\TestStarterDevelopment.yml.
 $ErrorActionPreference = 'Stop'
 
-# Jenkins string parameter GroovyScriptFile has trim=true
-if ($env:GROOVY_SCRIPT_FILE) { $env:GROOVY_SCRIPT_FILE = $env:GROOVY_SCRIPT_FILE.Trim() }
-
-# = def loadedStages = load "<DataPath>Batches\TestStarterDevelopment\<GroovyScriptFile>"
+# Always load the repository's PowerShell stages implementation.
 . "$PSScriptRoot\..\Shared\TestStarterDevelopmentStages.ps1"
-
-# The only stages file in Jenkins\Batches\TestStarterDevelopment; other GroovyScriptFile values have no PowerShell port.
-$SupportedGroovyScriptFiles = @('TestStarterDevelopmentStages.groovy')
 
 # PrintStageHeader() of the TestStarterDevelopment Jenkinsfile
 function PrintStageHeader([string] $headerName) {
