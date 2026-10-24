@@ -1,15 +1,20 @@
-# PowerShell version of Jenkins\Tools\functions.groovy (loaded on the side PC from D:\Jenkins\Tools\functions.groovy).
-# Jenkins:  def defaultmethods = load "D:/Jenkins/Tools/functions.groovy"; defaultmethods.CheckRunningOnNode()
+# PowerShell version of Jenkins\Tools\functions.groovy.
+# Jenkins:  def defaultmethods = load "Tools/functions.groovy"; defaultmethods.CheckRunningOnNode()
 # GHA:      . "$PSScriptRoot\..\Shared\functions.ps1";               CheckRunningOnNode
 # Same method names, parameters and behaviour. Jenkins-only parts:
 #   currentBuild.displayName -> heading in the job summary (the run name itself is set by run-name: in the workflow)
 #   stage(...)               -> ::group:: block in the step log (steps cannot be created at run time)
 #   error(...)               -> throw (stops the step red, like error stops the stage)
 #   build job: 'OtherTest'   -> OtherTest only runs CheckRunningOnNode + StartTestBatch on the same SystemName, so it runs inline
-# Inputs from env: SYSTEM_NAME (SystemName), RUN_JOB (RunJob), RUNNER_NAME (NODE_NAME), DATA_PATH (env.DataPath, default D:\Jenkins\).
+# Inputs from env: SYSTEM_NAME (SystemName), RUN_JOB (RunJob), RUNNER_NAME (NODE_NAME).
+# GITHUB_WORKSPACE takes priority; DATA_PATH is an optional local execution override.
 
-$FunctionsDataPath = if ($env:DATA_PATH) { $env:DATA_PATH } else { 'D:\Jenkins\' }
-if (-not $FunctionsDataPath.EndsWith('\')) { $FunctionsDataPath += '\' }
+$RepositoryPath = if ($env:GITHUB_WORKSPACE) {
+    $env:GITHUB_WORKSPACE
+} else {
+    (Resolve-Path (Join-Path $PSScriptRoot '../../..')).Path
+}
+$FunctionsDataPath = if (-not $env:GITHUB_WORKSPACE -and $env:DATA_PATH) { $env:DATA_PATH } else { $RepositoryPath }
 
 # Jenkins 'bat' step: runs the command line as given, returns the exit code.
 function Invoke-Bat([string] $Label, [string] $Script) {
@@ -55,7 +60,8 @@ function KillTasks {
 
 function TalkText([string] $Text, [int] $Volume = 100) {
     # plain 'bat' (no catchError): a failure fails the build
-    $rc = Invoke-Bat 'RunTest' ($FunctionsDataPath + '\Tools\Talk.cmd "' + $Text + '" ' + $Volume)
+    $talkPath = Join-Path $FunctionsDataPath 'Tools/Talk.cmd'
+    $rc = Invoke-Bat 'RunTest' "`"$talkPath`" `"$Text`" $Volume"
     if ($rc -ne 0) { throw "TalkText failed with exit code $rc." }
 }
 
@@ -66,7 +72,9 @@ function StartTestBatch {
         $exitCode = -1
         KillTasks
         # catchError(SUCCESS, SUCCESS) { returnStatus }
-        $exitCode = Invoke-Bat 'RunTest' "`"$($FunctionsDataPath)tools\RunAsCurrentUser.exe`" `"$FunctionsDataPath$runJob`" `"$runJob`""
+        $launcherPath = Join-Path $FunctionsDataPath 'Tools/RunAsCurrentUser.exe'
+        $batchPath = Join-Path $FunctionsDataPath $runJob
+        $exitCode = Invoke-Bat 'RunTest' "`"$launcherPath`" `"$batchPath`" `"$runJob`""
         Write-Host "RunTest exit code: $exitCode"
         if ($exitCode -eq 9999) {
             TalkText 'Job stopped by user'

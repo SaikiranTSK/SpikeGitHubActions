@@ -12,9 +12,13 @@ jobs:
   copy:
     runs-on: [self-hosted, Windows, "${{ inputs.system_name }}"]
     steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: .github/Tools
+
       - name: Copy Tools
         shell: powershell
         run: |
-          robocopy '\\nlybstqvp4dt7nv.code1.emi.philips.com\JenkinsBatches\Tools' 'D:\Jenkins\Tools' /E /R:2 /W:5
+          robocopy (Join-Path $env:GITHUB_WORKSPACE '.github/Tools') (Join-Path $env:GITHUB_WORKSPACE 'Tools') /E /R:2 /W:5
           if ($LASTEXITCODE -ge 8) { exit $LASTEXITCODE }
           exit 0
