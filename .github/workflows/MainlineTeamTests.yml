@@ -1,4 +1,4 @@
-# GitHub Actions version of Jenkins\PipelineScriptBackup\MainlineTeamTests.groovy
+# GitHub Actions version of Jenkins\PipelineScriptBackup\MainlineTeamTests.groovys
 # Docs: docs\pipelines\MainlineTeamTests.md
 name: MainlineTeamTests
 run-name: ${{ inputs.SystemName }} - ${{ inputs.RunAllJobs && 'AllJobs' || inputs.JobName }}
