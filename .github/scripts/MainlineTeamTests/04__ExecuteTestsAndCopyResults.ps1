@@ -32,9 +32,10 @@ if ($env:RUN_ALL_JOBS -eq 'true') {
     $jobsToRun = @($env:JOB_NAME)
 }
 Write-Host "Jobs selected for execution: $($jobsToRun -join ', ')"
+$resultsRoot = Join-Path $env:RUNNER_TEMP 'MainlineTeamTests\results'
 
 Add-Summary ''
-Add-Summary '| Job | Test exit code | Copy results | Duration | Result |'
+Add-Summary '| Job | Test exit code | Result artifact | Duration | Result |'
 Add-Summary '|---|---|---|---|---|'
 
 foreach ($job in $jobsToRun) {
@@ -57,6 +58,12 @@ foreach ($job in $jobsToRun) {
             $skip = $null
             if (-not "$env:RESTORE_NAME".Trim()) { $skip = 'RestoreName is mandatory for RestoreMain execution.' }
             elseif (-not "$env:RESTORE_FROM_LOCATION".Trim()) { $skip = 'RestoreFromLocation is mandatory for RestoreMain execution.' }
+            elseif (-not (Test-LocalRunnerPath $env:RESTORE_FROM_LOCATION)) {
+                $skip = 'RestoreFromLocation must be on a local runner drive; network shares and mapped network drives are not supported.'
+            }
+            elseif (-not (Test-Path -LiteralPath $env:RESTORE_FROM_LOCATION -PathType Container)) {
+                $skip = 'RestoreFromLocation was not found on the runner.'
+            }
             elseif (-not (Test-Path -LiteralPath $InstallationIni)) {
                 Write-Host 'Installation.ini file not found'
                 $skip = 'Failed to update Installation.ini for RestoreMain.'
@@ -84,8 +91,22 @@ foreach ($job in $jobsToRun) {
         }
         if ($testCode -ne 0) { Write-Host "::warning::Test batch $job returned $testCode (ignored, as in Jenkins)." }
 
-        $copyCode = Invoke-Batch "Copy Results to nightbatch- $job" "`"$DataPath\GenericApproach\copy_results_to_nightbatch_jenkins.cmd`" $job"
-        if ($copyCode -ne 0) { throw "Copy Results to nightbatch failed for $job with exit code $copyCode." }
+        $copyCode = Invoke-Batch "Collect Results - $job" "`"$DataPath\GenericApproach\collect_mainline_results_jenkins.cmd`" $job"
+        if ($copyCode -ne 0) { throw "Collecting results failed for $job with exit code $copyCode." }
+        $jobResults = Join-Path $resultsRoot $job
+        New-Item -ItemType Directory -Path $jobResults -Force | Out-Null
+        if (-not (Test-Path -LiteralPath 'C:\Temp\FAST\Results' -PathType Container)) {
+            throw 'FAST results directory was not created.'
+        }
+        Get-ChildItem -LiteralPath 'C:\Temp\FAST\Results' -Force |
+            Copy-Item -Destination $jobResults -Recurse -Force
+        @(
+            "RunId=$env:GITHUB_RUN_ID"
+            "SystemName=$env:SYSTEM_NAME"
+            "Job=$job"
+            "Branch=$env:BRANCH"
+            "TestExitCode=$testCode"
+        ) | Set-Content -LiteralPath (Join-Path $jobResults 'run-metadata.txt') -Encoding utf8
         $result = 'done'
     }
     finally {

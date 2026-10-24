@@ -79,7 +79,7 @@ on:
           - Comet_BLR
           - Bhargava_BLR
       Branch:
-        description: Exact name of the folder that can be found here:\\code1.emi.philips.com\storage\IGTS_WIP_Storage\CIBuilds\TestTooling
+        description: Legacy build branch selector; installation uses FastMsiPath instead.
         required: true
         type: choice
         default: master
@@ -94,6 +94,16 @@ on:
         required: false
         type: boolean
         default: false
+      FastMsiPath:
+        description: Local runner path to an approved FAST MSI (required unless UseInstalledPDC is checked)
+        required: false
+        type: string
+        default: ''
+      FastMsiSha256:
+        description: Expected SHA-256 of FastMsiPath (required unless UseInstalledPDC is checked)
+        required: false
+        type: string
+        default: ''
       JobName:
         description: Test batch to run (ignored when RunAllJobs is checked)
         required: true
@@ -159,11 +169,10 @@ on:
         type: string
         default: ''
       RestoreFromLocation:
-        description: Name of the backup to be restored.Example CV_722079_STM2014_11122024015157_fd16
-                     This value must match the backup folder name available in RestoreFromLocation.
+        description: Local runner folder containing the RestoreName backup; network paths are not supported.
         required: false
         type: string
-        default: \\code1.emi.philips.com\storage\SDI_Publish\TestSystems\Backups
+        default: ''
 
   # Same pipeline, called by ExternalInterfaceAutomation.yml (Jenkins job with the same stages).
   workflow_call:
@@ -171,6 +180,8 @@ on:
       SystemName: { type: string, required: true }
       Branch: { type: string, required: false, default: master }
       UseInstalledPDC: { type: boolean, required: false, default: false }
+      FastMsiPath: { type: string, required: false, default: '' }
+      FastMsiSha256: { type: string, required: false, default: '' }
       JobName: { type: string, required: true }
       RunAllJobs: { type: boolean, required: false, default: false }
       AllJobs: { type: string, required: false, default: '' }
@@ -186,10 +197,6 @@ on:
 
 permissions:
   contents: read
-
-env:
-  # Paths (D:\Jenkins, Hooks.ini, Installation.ini, D:\SystemBackups) are in .github\scripts\MainlineTeamTests\Common.ps1
-  BATCHES_SHARE: ${{ vars.BATCHES_SHARE || '\\nlybstqvp4dt7nv\JenkinsBatches' }}
 
 jobs:
   check-runner:
@@ -218,6 +225,9 @@ jobs:
       JOB_TITLE: ${{ inputs.RunAllJobs && 'AllJobs' || inputs.JobName }}
       BRANCH: ${{ inputs.Branch }}
       USE_INSTALLED_PDC: ${{ inputs.UseInstalledPDC }}
+      FAST_MSI_PATH: ${{ inputs.FastMsiPath }}
+      FAST_MSI_SHA256: ${{ inputs.FastMsiSha256 }}
+      MAINLINE_TEAM_TESTS: 'true'
       SKIP_HOOKS_INI: ${{ inputs.SkipHooksIni }}
       JOB_NAME: ${{ inputs.JobName }}
       ALL_JOBS: ${{ inputs.AllJobs }}
@@ -229,7 +239,7 @@ jobs:
     steps:
       # No separate checkout step (Jenkins has none either): the first stage downloads the .github scripts itself
       # with git (sparse, depth 1, token not saved on the PC), so there is no "Get pipeline scripts" / "Post" step.
-      - name: Copy tools from share
+      - name: Stage repository-owned tools
         env:
           GIT_TOKEN: ${{ github.token }}
         run: |
@@ -254,3 +264,11 @@ jobs:
 
       - name: Execute Tests and Copy Results
         run: '& "$env:SCRIPTS\04__ExecuteTestsAndCopyResults.ps1"'
+
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4.6.2
+        with:
+          name: MainlineTeamTests-${{ github.run_id }}-${{ github.run_attempt }}-${{ inputs.SystemName }}
+          path: ${{ runner.temp }}\MainlineTeamTests\results
+          if-no-files-found: warn

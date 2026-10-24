@@ -9,6 +9,17 @@ $HooksIni = 'C:\Program Files (x86)\FAST\Hooks.ini'
 $InstallationIni = 'C:\Program Files (x86)\FAST\Installation.ini'
 $RestoreLocationOnSuitePC = 'D:\SystemBackups'
 
+function Test-LocalRunnerPath([string] $Path) {
+    if ($Path -match '^(\\\\|//)') { return $false }
+    $root = [IO.Path]::GetPathRoot($Path)
+    if ($root -notmatch '^[A-Za-z]:\\$') { return $false }
+    try {
+        return ([IO.DriveInfo]::new($root)).DriveType -ne [IO.DriveType]::Network
+    } catch {
+        return $false
+    }
+}
+
 # The test wrapper can return 0 even when RunAsCurrentUser reports abort (9999).
 function Invoke-Batch([string] $Label, [string] $CommandLine, [switch] $DetectAbort) {
     Write-Host "### $Label : $CommandLine"

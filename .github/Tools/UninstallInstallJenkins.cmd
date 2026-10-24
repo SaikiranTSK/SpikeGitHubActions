@@ -233,10 +233,21 @@ Added CUSTOMSUTLIB installation.
 
     static void CopyLoggingToNightbatch(string[] args, string logFile)
     {
-        var nightbatchDirectory = _nightbatchPath + Path.GetFileNameWithoutExtension(args[0]) + @"\" + Environment.MachineName + @"\";
-        LogMessage("Copy data to nightbatchDirectory " + nightbatchDirectory);
-        if (!Directory.Exists(nightbatchDirectory)) Directory.CreateDirectory(nightbatchDirectory);
-        File.Copy(logFile, nightbatchDirectory + Path.GetFileNameWithoutExtension(logFile) + "_" + args[2] + DateTime.Now.ToString("_yyyy-MM-dd_hh_mm_ss_tt", CultureInfo.InvariantCulture) + ".log");
+        var logName = Path.GetFileNameWithoutExtension(logFile) + "_" + args[2] +
+            DateTime.Now.ToString("_yyyy-MM-dd_hh_mm_ss_tt", CultureInfo.InvariantCulture) + ".log";
+        if (string.Equals(Environment.GetEnvironmentVariable("MAINLINE_TEAM_TESTS"), "true", StringComparison.OrdinalIgnoreCase))
+        {
+            var logDirectory = Path.Combine(Path.GetTempPath(), "MainlineTeamTests", "InstallerLogs");
+            Directory.CreateDirectory(logDirectory);
+            File.Copy(logFile, Path.Combine(logDirectory, logName), true);
+        }
+        else
+        {
+            var nightbatchDirectory = _nightbatchPath + Path.GetFileNameWithoutExtension(args[0]) + @"\" + Environment.MachineName + @"\";
+            LogMessage("Copy data to nightbatchDirectory " + nightbatchDirectory);
+            if (!Directory.Exists(nightbatchDirectory)) Directory.CreateDirectory(nightbatchDirectory);
+            File.Copy(logFile, nightbatchDirectory + logName);
+        }
     }
 
     static void KillTafTestRobotAndFAST()
