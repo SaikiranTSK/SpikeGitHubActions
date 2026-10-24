@@ -1,14 +1,9 @@
-# Jenkins stage 'Copy tools from share' (returnStatus: true -> never fails).
+# Jenkins stage 'Copy tools from repository' (returnStatus: true -> never fails).
 . "$PSScriptRoot\Common.ps1"
-$share = if ($env:BATCHES_SHARE) { $env:BATCHES_SHARE } else { '\\nlybstqvp4dt7nv\JenkinsBatches' }
-
-while (-not (Test-Path -LiteralPath $share)) {
-    Write-Host 'Checking connection... Server busy... waiting'
-    Start-Sleep -Seconds 10
-}
+$workspace = if ($env:GITHUB_WORKSPACE) { $env:GITHUB_WORKSPACE } else { (Resolve-Path (Join-Path $PSScriptRoot '..\..\..')).Path }
 
 Write-Host 'Starting copy...'
-foreach ($pair in @(@("$share\Tools", "$DataPath\Tools"), @("$share\Batches\GenericApproach", "$DataPath\GenericApproach"))) {
+foreach ($pair in @(@("$workspace\.github\Tools", "$DataPath\Tools"), @("$workspace\.github\GenericApproach", "$DataPath\GenericApproach"))) {
     & robocopy.exe $pair[0] $pair[1] /E /XO /FFT /MT:8 /R:3 /W:5 /NP /NFL /NDL | Out-Host
     $rc = $LASTEXITCODE
     Write-Host "robocopy $($pair[0]) -> $($pair[1]) exit code $rc"

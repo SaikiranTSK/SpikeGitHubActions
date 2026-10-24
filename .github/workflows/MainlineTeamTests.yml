@@ -187,10 +187,6 @@ on:
 permissions:
   contents: read
 
-env:
-  # Paths (D:\Jenkins, Hooks.ini, Installation.ini, D:\SystemBackups) are in .github\scripts\MainlineTeamTests\Common.ps1
-  BATCHES_SHARE: ${{ vars.BATCHES_SHARE || '\\nlybstqvp4dt7nv\JenkinsBatches' }}
-
 jobs:
   check-runner:
     uses: ./.github/workflows/check-runner.yml
@@ -229,7 +225,7 @@ jobs:
     steps:
       # No separate checkout step (Jenkins has none either): the first stage downloads the .github scripts itself
       # with git (sparse, depth 1, token not saved on the PC), so there is no "Get pipeline scripts" / "Post" step.
-      - name: Copy tools from share
+      - name: Copy tools from repository
         env:
           GIT_TOKEN: ${{ github.token }}
         run: |
