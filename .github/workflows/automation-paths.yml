@@ -1,0 +1,30 @@
+name: Automation paths
+
+on:
+  pull_request:
+    paths:
+      - '.github/workflows/**'
+      - '.github/scripts/**'
+      - '.github/GenericApproach/**'
+      - '.github/Tools/**'
+  push:
+    branches:
+      - copilot/copilotremove-hardcoded-d-jenkins-paths
+    paths:
+      - '.github/workflows/**'
+      - '.github/scripts/**'
+      - '.github/GenericApproach/**'
+      - '.github/Tools/**'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validate active automation paths
+        shell: powershell
+        run: ./.github/scripts/Test-AutomationPaths.ps1

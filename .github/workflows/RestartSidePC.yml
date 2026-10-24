@@ -86,10 +86,17 @@ jobs:
           if ($env:BATCH -notmatch '^[A-Za-z0-9][A-Za-z0-9_-]*$') {
             throw "Invalid batch folder name: $env:BATCH"
           }
-          $serverDirectory = "$env:BATCHES_SHARE\Batches\$env:BATCH"
-          $runPath = "D:\Jenkins\$env:BATCH"
+          if ([string]::IsNullOrWhiteSpace($env:BATCHES_SHARE) -or
+              -not (Test-Path -LiteralPath $env:BATCHES_SHARE -PathType Container)) {
+            throw 'BATCHES_SHARE must be a nonempty, accessible directory.'
+          }
+          $serverDirectory = Join-Path $env:BATCHES_SHARE "Batches\$env:BATCH"
+          if (-not (Test-Path -LiteralPath $serverDirectory -PathType Container)) {
+            throw "Batch folder not found: $serverDirectory"
+          }
+          $runPath = Join-Path $env:GITHUB_WORKSPACE $env:BATCH
 
-          & robocopy.exe "$env:BATCHES_SHARE\Tools" 'D:\Jenkins\Tools' /E /ZB /MIR /R:3 /W:5 | Out-Host
+          & robocopy.exe (Join-Path $env:GITHUB_WORKSPACE '.github/Tools') (Join-Path $env:GITHUB_WORKSPACE 'Tools') /E /ZB /MIR /R:3 /W:5 | Out-Host
           $toolsCode = $LASTEXITCODE
           if ($toolsCode -ge 8) {
             throw "Copying Tools failed with robocopy exit code $toolsCode."
@@ -115,5 +122,5 @@ jobs:
       - name: RestartSidePC
         run: |
           . "$env:GITHUB_WORKSPACE\.github\scripts\Shared\functions.ps1"
-          $runPath = "D:\Jenkins\$env:BATCH"
+          $runPath = Join-Path $env:GITHUB_WORKSPACE $env:BATCH
           StartTestsFromBatch $runPath $env:SYSTEM_NAME $env:BATCH
