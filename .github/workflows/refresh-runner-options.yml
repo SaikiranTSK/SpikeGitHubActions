@@ -1,0 +1,97 @@
+name: Refresh runner options (Mainline + TestStarter)
+
+on:
+  workflow_dispatch:
+  # Optional (for automatic periodic refresh):
+  # schedule:
+  #   - cron: '*/15 * * * *'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: refresh-runner-options
+  cancel-in-progress: false
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      SYSTEMS_FILE: .github/runner-systems.txt
+      WORKFLOW_FILES: ".github/workflows/MainlineTeamTests.yml .github/workflows/TestStarter.yml"
+    steps:
+      - name: Checkout default branch
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.repository.default_branch }}
+          token: ${{ secrets.RUNNER_OPTIONS_TOKEN }}
+
+      - name: Validate required files
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -f "$SYSTEMS_FILE"
+          test -f ".github/scripts/update-runner-options.py"
+
+      - name: Fetch online runner names and labels
+        shell: bash
+        env:
+          GH_TOKEN: ${{ secrets.RUNNER_OPTIONS_TOKEN }}
+          REPO: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+          : > "$RUNNER_TEMP/online.txt"
+
+          gh api "repos/$REPO/actions/runners" --paginate --jq '
+            .runners[]
+            | select(.status == "online")
+            | select(any(.labels[]; .name == "self-hosted") and any(.labels[]; .name == "Windows"))
+            | .name, (.labels[].name)
+          ' | sed '/^$/d' | sort -u > "$RUNNER_TEMP/online.txt"
+
+          echo "Collected online names/labels:"
+          cat "$RUNNER_TEMP/online.txt" || true
+
+      - name: Update SystemName options in both workflows
+        shell: bash
+        run: |
+          set -euo pipefail
+          chmod +x .github/scripts/update-runner-options.py
+          for f in $WORKFLOW_FILES; do
+            if [ -f "$f" ]; then
+              python3 .github/scripts/update-runner-options.py "$f" "$SYSTEMS_FILE" "$RUNNER_TEMP/online.txt"
+            else
+              echo "::warning::Workflow file not found: $f (skipped)"
+            fi
+          done
+
+      - name: Commit and push if changed
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          # Add only target workflow files that exist
+          add_list=()
+          for f in $WORKFLOW_FILES; do
+            if [ -f "$f" ]; then
+              add_list+=("$f")
+            fi
+          done
+
+          if [ ${#add_list[@]} -eq 0 ]; then
+            echo "::warning::No target workflow files exist; nothing to commit."
+            exit 0
+          fi
+
+          git add "${add_list[@]}"
+
+          if git diff --cached --quiet; then
+            echo "No dropdown changes."
+            exit 0
+          fi
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -m "Refresh SystemName options (online self-hosted Windows runners)"
+          git push
