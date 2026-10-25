@@ -1,48 +1,92 @@
-"""Replace the SystemName choice options in MainlineTeamTests.yml.
-
-Usage: update-runner-options.py <workflow.yml> <systems.txt> <online.txt>
-  systems.txt : master list (one per line, '#' = comment), defines the order
-  online.txt  : runner names/labels that are online now (one per line)
-Only the lines under 'SystemName: ... options:' are changed; the rest of the file stays byte-identical.
+#!/usr/bin/env python3
 """
+Replace workflow_dispatch.inputs.SystemName.options in one workflow file.
+
+Usage:
+  update-runner-options.py <workflow.yml> <systems.txt> <online.txt>
+
+- systems.txt: master list (one system per line, '#' comments allowed), preserves order.
+- online.txt : names/labels that are online now (one per line).
+Only the first "SystemName:" block (workflow_dispatch) is updated.
+"""
+
+from __future__ import annotations
 import sys
+from pathlib import Path
 
-workflow, systems_file, online_file = sys.argv[1:4]
+if len(sys.argv) != 4:
+    print("Usage: update-runner-options.py <workflow.yml> <systems.txt> <online.txt>", file=sys.stderr)
+    sys.exit(2)
 
-def read_list(path):
-    with open(path, encoding="utf-8") as f:
-        return [l.strip() for l in f if l.strip() and not l.strip().startswith("#")]
+workflow_path = Path(sys.argv[1])
+systems_path = Path(sys.argv[2])
+online_path = Path(sys.argv[3])
 
-systems = read_list(systems_file)
-online = set(read_list(online_file))
+def read_list(path: Path) -> list[str]:
+    items: list[str] = []
+    for raw in path.read_text(encoding="utf-8").splitlines():
+        s = raw.strip()
+        if not s or s.startswith("#"):
+            continue
+        items.append(s)
+    return items
+
+systems = read_list(systems_path)
+online = set(read_list(online_path))
+
 selected = [s for s in systems if s in online]
 
 if not selected:
-    print("::warning::No system from runner-systems.txt is online. Dropdown not changed.")
+    print(f"::warning::{workflow_path}: no known systems are online; leaving file unchanged.")
     sys.exit(0)
 
-with open(workflow, encoding="utf-8", newline="") as f:
-    lines = f.read().splitlines(keepends=True)
-eol = "\r\n" if lines and lines[0].endswith("\r\n") else "\n"
+text = workflow_path.read_text(encoding="utf-8", newline="")
+lines = text.splitlines(keepends=True)
 
-# First 'SystemName:' is the workflow_dispatch one (workflow_call uses the inline { } form).
+# Preserve file line endings
+eol = "\n"
+for ln in lines:
+    if ln.endswith("\r\n"):
+        eol = "\r\n"
+        break
+
+# Find first exact "SystemName:" line (workflow_dispatch block)
 try:
-    start = next(i for i, l in enumerate(lines) if l.strip() == "SystemName:")
-    opt = next(i for i in range(start + 1, len(lines)) if lines[i].strip() == "options:")
+    i_system = next(i for i, l in enumerate(lines) if l.strip() == "SystemName:")
 except StopIteration:
-    sys.exit("::error::SystemName options block not found in " + workflow)
+    print(f"::error::{workflow_path}: 'SystemName:' not found.")
+    sys.exit(1)
 
-first = opt + 1
-indent = lines[first][: len(lines[first]) - len(lines[first].lstrip())]
-end = first
-while end < len(lines) and lines[end].startswith(indent + "- "):
-    end += 1
+# Find "options:" after SystemName
+try:
+    i_options = next(i for i in range(i_system + 1, len(lines)) if lines[i].strip() == "options:")
+except StopIteration:
+    print(f"::error::{workflow_path}: 'options:' under SystemName not found.")
+    sys.exit(1)
 
-lines[first:end] = [f"{indent}- {s}{eol}" for s in selected]
+# Determine list item indentation from first existing item, or default two spaces deeper than options:
+# options indentation + two spaces + "- "
+opt_indent = lines[i_options][:len(lines[i_options]) - len(lines[i_options].lstrip())]
+default_item_indent = opt_indent + "  "
 
-with open(workflow, "w", encoding="utf-8", newline="") as f:
-    f.writelines(lines)
+first_item = i_options + 1
+if first_item < len(lines) and lines[first_item].lstrip().startswith("- "):
+    item_indent = lines[first_item][:len(lines[first_item]) - len(lines[first_item].lstrip())]
+else:
+    item_indent = default_item_indent
 
-print(f"SystemName options: {len(selected)} online of {len(systems)} known systems.")
-for s in systems:
-    print(f"  {'online ' if s in online else 'offline'}  {s}")
+# Consume current "- ..." lines
+end = first_item
+while end < len(lines):
+    s = lines[end]
+    # list item at same indent
+    if s.startswith(item_indent) and s[len(item_indent):].startswith("- "):
+        end += 1
+    else:
+        break
+
+replacement = [f"{item_indent}- {name}{eol}" for name in selected]
+lines[first_item:end] = replacement
+
+workflow_path.write_text("".join(lines), encoding="utf-8", newline="")
+print(f"{workflow_path}: updated SystemName options to {len(selected)} online systems (of {len(systems)} known).")
