@@ -1,10 +1,10 @@
 # Shared helpers for the MainlineTeamTests stage scripts (dot-sourced).
 $ErrorActionPreference = 'Stop'
 
-# = def defaultmethods = load "D:/Jenkins/Tools/functions.groovy"
+# Shared functions are loaded from the checkout.
 . "$PSScriptRoot\..\Shared\functions.ps1"
 
-$DataPath = 'D:\Jenkins'
+$DataPath = $RepositoryPath
 $HooksIni = 'C:\Program Files (x86)\FAST\Hooks.ini'
 $InstallationIni = 'C:\Program Files (x86)\FAST\Installation.ini'
 $RestoreLocationOnSuitePC = 'D:\SystemBackups'

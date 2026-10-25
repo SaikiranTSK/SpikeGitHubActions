@@ -184,13 +184,17 @@ jobs:
       RestoreFromLocation: ${{ inputs.RestoreFromLocation }}
  
     steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: .github
+
       - name: Execute MainlineTeamTests
         shell: powershell
         run: |
           $ErrorActionPreference = 'Stop'
  
-          $JenkinsBatchesPath = '\\nlybstqvp4dt7nv\JenkinsBatches'
-          $DataPath = 'D:\Jenkins'
+          $DataPath = $env:GITHUB_WORKSPACE
+          $RepositoryAssets = Join-Path $DataPath '.github'
           $GenericApproach = Join-Path $DataPath 'GenericApproach'
           $HooksIni = 'C:\Program Files (x86)\FAST\Hooks.ini'
           $InstallationIni = 'C:\Program Files (x86)\FAST\Installation.ini'
@@ -241,13 +245,8 @@ jobs:
             throw "Expected SystemName '$env:SystemName'; running on '$env:RUNNER_NAME'."
           }
  
-          while (-not (Test-Path -LiteralPath $JenkinsBatchesPath)) {
-            Write-Host 'Server busy... waiting'
-            Start-Sleep -Seconds 10
-          }
- 
           & robocopy.exe `
-            (Join-Path $JenkinsBatchesPath 'Tools') `
+            (Join-Path $RepositoryAssets 'Tools') `
             (Join-Path $DataPath 'Tools') `
             /E /XO /FFT /MT:8 /R:3 /W:5 /NP /NFL /NDL | Out-Host
  
@@ -256,7 +255,7 @@ jobs:
           }
  
           & robocopy.exe `
-            (Join-Path $JenkinsBatchesPath 'Batches\GenericApproach') `
+            (Join-Path $RepositoryAssets 'GenericApproach') `
             $GenericApproach `
             /E /XO /FFT /MT:8 /R:3 /W:5 /NP /NFL /NDL | Out-Host
  

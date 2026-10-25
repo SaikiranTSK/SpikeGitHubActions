@@ -1,5 +1,5 @@
 ﻿# PowerShell version of Jenkins\Batches\TestStarterDevelopment\TestStarterDevelopmentStages.groovy (loaded on the side PC
-# from D:\Jenkins\Batches\TestStarterDevelopment\TestStarterDevelopmentStages.groovy by the Jenkins job).
+# from Batches\TestStarterDevelopment\TestStarterDevelopmentStages.groovy by the Jenkins job).
 # Jenkins:  def loadedStages = load "...\TestStarterDevelopmentStages.groovy"; loadedStages.TriggerStagePipeline()
 # GHA:      . "$PSScriptRoot\..\Shared\TestStarterDevelopmentStages.ps1"; StartStage_PrepareEnvironment / StartStage_ExecuteTests
 # Same method names, parameters and behaviour. Jenkins-only parts:

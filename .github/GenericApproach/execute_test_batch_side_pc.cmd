@@ -355,7 +355,7 @@ if %1==%acceptanceTestJobName% (
     )
     echo "Generate Specflow Report"
     REM only supported for the Acceptance test
-    call "D:/Jenkins/GenericApproach/generate_specflow_report.cmd" "%majorVersion%"
+    call "%~dp0generate_specflow_report.cmd" "%majorVersion%"
 ) else if %1==%reliabilityTestJobName% (
     if "%majorVersion%"=="2" (
         %nunitExecutable% /work:%nunitOutputFolder% %reliabilityTestDll% /include:%reliabilityTestIncludeCategories%
