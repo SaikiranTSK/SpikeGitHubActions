@@ -40,7 +40,8 @@ if not selected:
     print(f"::warning::{workflow_path}: no known systems are online; leaving file unchanged.")
     sys.exit(0)
 
-text = workflow_path.read_text(encoding="utf-8", newline="")
+with workflow_path.open("r", encoding="utf-8", newline="") as f:
+    text = f.read()
 lines = text.splitlines(keepends=True)
 
 # Preserve file line endings
@@ -88,5 +89,6 @@ while end < len(lines):
 replacement = [f"{item_indent}- {name}{eol}" for name in selected]
 lines[first_item:end] = replacement
 
-workflow_path.write_text("".join(lines), encoding="utf-8", newline="")
+with workflow_path.open("w", encoding="utf-8", newline="") as f:
+    f.write("".join(lines))
 print(f"{workflow_path}: updated SystemName options to {len(selected)} online systems (of {len(systems)} known).")
