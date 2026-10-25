@@ -1,5 +1,5 @@
 # Every known side PC (runner name or label). Order here = order in the dropdown.
-# refresh-runner-options.yml copies only the systems that are online right now into MainlineTeamTests.yml.
+# refresh-runner-options.yml copies only the systems that are online right now into Pipelines.
 Technopolis6
 Technopolis5
 BV3
