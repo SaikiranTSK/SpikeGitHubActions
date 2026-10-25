@@ -50,7 +50,7 @@ foreach ($job in $jobsToRun) {
     Write-Host "Running job: $job"
     Write-Host '======================================'
     try {
-        Invoke-Batch "Refresh Environment - $job" "`"$DataPath\GenericApproach\copy_nunit_specflow.cmd`"" | Out-Null
+        Invoke-Batch "Refresh Environment - $job" "`"$GenericApproachPath\copy_nunit_specflow.cmd`"" | Out-Null
 
         if ($job -eq 'RestoreMain') {
             Write-Host 'RestoreMain selected. Validating restore parameters before updating Installation.ini'
@@ -74,17 +74,17 @@ foreach ($job in $jobsToRun) {
             Write-Host 'Restore parameters updated successfully'
         }
 
-        $testCode = Invoke-Batch "Execute Tests - $job" "`"$DataPath\GenericApproach\execute_test_batch_jenkins.cmd`" $job `"$env:TEST_CATEGORIES`"" -DetectAbort
+        $testCode = Invoke-Batch "Execute Tests - $job" "`"$GenericApproachPath\execute_test_batch_jenkins.cmd`" $job `"$env:TEST_CATEGORIES`"" -DetectAbort
         if ($testCode -eq 9999) {
             Write-Host 'Abort detected. Running ResetNidaq...'
-            $resetCode = Invoke-Batch 'Reset Logic' "`"$DataPath\GenericApproach\execute_test_batch_jenkins.cmd`" ResetNidaq"
+            $resetCode = Invoke-Batch 'Reset Logic' "`"$GenericApproachPath\execute_test_batch_jenkins.cmd`" ResetNidaq"
             if ($resetCode -ne 0) { Write-Host "::error::ResetNidaq failed with exit code $resetCode" }
             $result = 'aborted (9999)'
             throw "Pipeline stopped due to abort in $job"
         }
         if ($testCode -ne 0) { Write-Host "::warning::Test batch $job returned $testCode (ignored, as in Jenkins)." }
 
-        $copyCode = Invoke-Batch "Copy Results to nightbatch- $job" "`"$DataPath\GenericApproach\copy_results_to_nightbatch_jenkins.cmd`" $job"
+        $copyCode = Invoke-Batch "Copy Results to nightbatch- $job" "`"$GenericApproachPath\copy_results_to_nightbatch_jenkins.cmd`" $job"
         if ($copyCode -ne 0) { throw "Copy Results to nightbatch failed for $job with exit code $copyCode." }
         $result = 'done'
     }

@@ -1,10 +1,28 @@
 # Shared helpers for the MainlineTeamTests stage scripts (dot-sourced).
 $ErrorActionPreference = 'Stop'
 
-# = def defaultmethods = load "D:/Jenkins/Tools/functions.groovy"
 . "$PSScriptRoot\..\Shared\functions.ps1"
 
-$DataPath = 'D:\Jenkins'
+# Hard cutover: repo tooling runs from the fetched checkout, never a DataPath copy.
+if (-not $env:GITHUB_WORKSPACE) { throw 'GITHUB_WORKSPACE must point to the fetched repository.' }
+# The bundled RunAsCurrentUser/RunInCurrentUser launchers do not preserve quoted paths.
+if ($env:GITHUB_WORKSPACE -match '\s') { throw 'The bundled RunAsCurrentUser tooling requires a GITHUB_WORKSPACE path without whitespace.' }
+$ToolsPath = Join-Path $env:GITHUB_WORKSPACE '.github\Tools'
+$GenericApproachPath = Join-Path $env:GITHUB_WORKSPACE '.github\GenericApproach'
+foreach ($tool in @(
+    "$ToolsPath\RunAsCurrentUser.exe",
+    "$ToolsPath\RunInCurrentUser.exe",
+    "$GenericApproachPath\install_fast_jenkins.cmd",
+    "$GenericApproachPath\install_fast_side_pc.cmd",
+    "$GenericApproachPath\copy_nunit_specflow.cmd",
+    "$GenericApproachPath\execute_test_batch_jenkins.cmd",
+    "$GenericApproachPath\execute_test_batch_side_pc.cmd",
+    "$GenericApproachPath\generate_specflow_report.cmd",
+    "$GenericApproachPath\copy_results_to_nightbatch_jenkins.cmd",
+    "$GenericApproachPath\copy_results_to_nightbatch_side_pc.cmd"
+)) {
+    if (-not (Test-Path -LiteralPath $tool -PathType Leaf)) { throw "Required workspace tooling not found: $tool" }
+}
 $HooksIni = 'C:\Program Files (x86)\FAST\Hooks.ini'
 $InstallationIni = 'C:\Program Files (x86)\FAST\Installation.ini'
 $RestoreLocationOnSuitePC = 'D:\SystemBackups'

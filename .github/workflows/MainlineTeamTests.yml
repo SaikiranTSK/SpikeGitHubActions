@@ -141,7 +141,7 @@ jobs:
     # one pending run and cancel the others.
     # Jenkins has no time limit (runs up to 46 h seen). 7200 min = 5 days = GitHub maximum for self-hosted jobs.
     timeout-minutes: 7200
-    # Same 4 stages as the Jenkins Stage View; each stage is one step running one numbered script.
+    # Fetch repo tooling into the workspace, then run the three numbered execution stages.
     defaults:
       run:
         shell: powershell
@@ -160,9 +160,9 @@ jobs:
       RESTORE_NAME: ${{ inputs.RestoreName }}
       RESTORE_FROM_LOCATION: ${{ inputs.RestoreFromLocation }}
     steps:
-      # No separate checkout step (Jenkins has none either): the first stage downloads the .github scripts itself
-      # with git (sparse, depth 1, token not saved on the PC), so there is no "Get pipeline scripts" / "Post" step.
-      - name: Copy tools from repository
+      # Hard cutover: fetch .github once and execute in place; no DataPath tooling copy.
+      # Sparse, depth 1, token not saved on the PC.
+      - name: Fetch workspace tooling
         env:
           GIT_TOKEN: ${{ github.token }}
         run: |
@@ -177,7 +177,7 @@ jobs:
           git -C "$ws" checkout -q --force FETCH_HEAD
           if ($LASTEXITCODE) { exit $LASTEXITCODE }
           git -C "$ws" clean -ffdxq
-          & "$env:SCRIPTS\01__CopyToolsFromShare.ps1"
+          . "$env:SCRIPTS\Common.ps1"
           
       - name: Check running on node
         run: '& "$env:SCRIPTS\02__CheckRunningOnNode.ps1"'
