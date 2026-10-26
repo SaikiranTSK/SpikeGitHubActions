@@ -10,8 +10,12 @@ RD /S /Q "C:\Temp\FAST\Tools\SpecFlow.2.3.2"
 echo "Clean C:\Temp\Tools\duurtest_*"
 RD /S /Q "C:\Temp\Tools\duurtest_*"
 
-echo "Copy SpecflowReporter"
-robocopy "\\nlybstqvp4dt7nv.code1.emi.philips.com\JenkinsBatches\Packages\SpecFlow.2.3.2" "C:\Temp\FAST\Tools\SpecFlow.2.3.2" /IS /W:30 /R:100 /np
-IF %ERRORLEVEL% EQU 1 (
-  set "errorlevel=0"  
+echo "Copy SpecflowReporter from repository workspace"
+if not exist "%~dp0..\Packages\SpecFlow.2.3.2\specflow.exe" (
+  echo [ERROR] Workspace SpecFlow package is missing.
+  exit /b 1
 )
+
+robocopy "%~dp0..\Packages\SpecFlow.2.3.2" "C:\Temp\FAST\Tools\SpecFlow.2.3.2" /E /IS /W:5 /R:2 /NP
+if errorlevel 8 exit /b %ERRORLEVEL%
+exit /b 0
