@@ -50,7 +50,10 @@ foreach ($job in $jobsToRun) {
     Write-Host "Running job: $job"
     Write-Host '======================================'
     try {
-        Invoke-Batch "Refresh Environment - $job" "`"$GenericApproachPath\copy_nunit_specflow.cmd`"" | Out-Null
+        $refreshCode = Invoke-Batch "Refresh Environment - $job" "`"$GenericApproachPath\copy_nunit_specflow.cmd`""
+        if ($refreshCode -ne 0) {
+            throw "Refresh Environment failed for $job with exit code $refreshCode."
+        }
 
         if ($job -eq 'RestoreMain') {
             Write-Host 'RestoreMain selected. Validating restore parameters before updating Installation.ini'
