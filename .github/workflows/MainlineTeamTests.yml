@@ -162,22 +162,10 @@ jobs:
     steps:
       # Hard cutover: fetch .github once and execute in place; no DataPath tooling copy.
       # Sparse, depth 1, token not saved on the PC.
-      - name: Fetch workspace tooling
-        env:
-          GIT_TOKEN: ${{ github.token }}
-        run: |
-          $ws = $env:GITHUB_WORKSPACE
-          $auth = 'AUTHORIZATION: basic ' + [Convert]::ToBase64String([Text.Encoding]::ASCII.GetBytes("x-access-token:$env:GIT_TOKEN"))
-          if (Test-Path "$ws\.git") { Remove-Item "$ws\.git" -Recurse -Force }
-          git init -q "$ws"
-          git -C "$ws" config core.sparseCheckout true
-          Set-Content -LiteralPath "$ws\.git\info\sparse-checkout" -Value '/.github/' -Encoding ascii
-          git -C "$ws" -c "http.extraheader=$auth" fetch -q --depth 1 --no-tags "$env:GITHUB_SERVER_URL/$env:GITHUB_REPOSITORY" $env:GITHUB_SHA
-          if ($LASTEXITCODE) { Write-Host "::error::Could not download pipeline scripts ($env:GITHUB_SHA)."; exit $LASTEXITCODE }
-          git -C "$ws" checkout -q --force FETCH_HEAD
-          if ($LASTEXITCODE) { exit $LASTEXITCODE }
-          git -C "$ws" clean -ffdxq
-          . "$env:SCRIPTS\Common.ps1"
+      - name: Get pipeline scripts
+        uses: actions/checkout@v4
+        with:
+          sparse-checkout: .github
           
       - name: Check running on node
         run: '& "$env:SCRIPTS\02__CheckRunningOnNode.ps1"'
