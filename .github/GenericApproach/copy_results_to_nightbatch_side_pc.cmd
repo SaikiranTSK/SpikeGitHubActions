@@ -86,18 +86,19 @@ echo %FullPathWithDateAndBatch%
 mkdir %FullPathWithDateAndBatch%
 
 CALL:COPY "Report to NightBatch" "C:\Temp\FAST\Results" "%FullPathWithDateAndBatch%"
+if errorlevel 1 (endlocal & exit /b %ERRORLEVEL%)
 echo "Find the report at {[ %FullPathWithDateAndBatch% ]}"
 
 echo [InternetShortcut] >"%FullPathWithDateAndBatch%\LinkToResultViewer.url"
+if errorlevel 1 (endlocal & exit /b %ERRORLEVEL%)
 echo URL=%ResultViewerURL%%URLExtension% >>"%FullPathWithDateAndBatch%\LinkToResultViewer.url"
+if errorlevel 1 (endlocal & exit /b %ERRORLEVEL%)
 
-endlocal
-GOTO:EOF
+endlocal & exit /b 0
 
 :COPY
 echo "Copy %~1"
 robocopy "%~2" "%~3" /V /NP /MIR /W:30 /R:100
-IF %ERRORLEVEL% EQU 1 (
-  set "errorlevel=0"  
-)
-GOTO:EOF
+rem Robocopy codes 0-7 are non-failures; 8 and above indicate a copy failure.
+if errorlevel 8 exit /b %ERRORLEVEL%
+exit /b 0
