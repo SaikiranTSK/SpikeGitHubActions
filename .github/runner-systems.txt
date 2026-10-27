@@ -55,7 +55,7 @@ Garga_BLR
 VincentVanGogh
 HendrikWillemMesdag-2STM
 HendrikWillemMesdag-STM
-Kanva
+Kanva_BLR
 SystemTest_VirtualAzurion_2
 EL_Capitan
 China_System
