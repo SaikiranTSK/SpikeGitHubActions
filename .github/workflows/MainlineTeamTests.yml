@@ -184,6 +184,7 @@ jobs:
           sparse-checkout: .github/schedules
 
       - name: Add request to queue
+        shell: bash
         env:
           RUN_AT_ISO: ${{ steps.when.outputs.iso }}
         run: |
@@ -201,23 +202,41 @@ jobs:
           echo "$entry" | jq .
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          # Retry on push conflicts (other requests or the scheduler may update the queue at the same time).
-          for attempt in 1 2 3 4 5; do
-            git fetch -q --depth=1 origin "$DEFAULT_BRANCH"
-            git reset -q --hard FETCH_HEAD
-            mkdir -p "$(dirname "$QUEUE_FILE")"
-            [ -s "$QUEUE_FILE" ] || echo '[]' > "$QUEUE_FILE"
-            jq --argjson e "$entry" '. + [$e] | sort_by(.runAtUtc)' "$QUEUE_FILE" > "$RUNNER_TEMP/queue.json"
-            mv "$RUNNER_TEMP/queue.json" "$QUEUE_FILE"
-            git add "$QUEUE_FILE"
-            git commit -q -m "Schedule MainlineTeamTests on $SYSTEM_NAME at $RUN_AT_ISO"
-            if git push -q origin "HEAD:$DEFAULT_BRANCH"; then
-              echo "::notice::Scheduled MainlineTeamTests on $SYSTEM_NAME at $RUN_AT_ISO (request $GITHUB_RUN_ID-$GITHUB_RUN_ATTEMPT)."
-              exit 0
+          max_attempts=5
+          for ((attempt=1; attempt<=max_attempts; attempt++)); do
+            echo "Queue update attempt $attempt/$max_attempts on $DEFAULT_BRANCH."
+            # Rebuild from the latest queue after conflicts; never force-push or overwrite concurrent requests.
+            if ! git fetch --depth=1 origin "$DEFAULT_BRANCH" ||
+               ! git reset --hard FETCH_HEAD; then
+              echo "::warning::Could not sync $DEFAULT_BRANCH on attempt $attempt/$max_attempts."
+            else
+              mkdir -p "$(dirname "$QUEUE_FILE")"
+              [ -s "$QUEUE_FILE" ] || echo '[]' > "$QUEUE_FILE"
+              # Preserve an already-persisted request, including its original creation time.
+              jq --argjson e "$entry" \
+                'if any(.[]; .id == $e.id) then . else . + [$e] | sort_by(.runAtUtc) end' \
+                "$QUEUE_FILE" > "$RUNNER_TEMP/queue.json"
+              mv "$RUNNER_TEMP/queue.json" "$QUEUE_FILE"
+              if ! git add "$QUEUE_FILE"; then
+                echo "::warning::Could not stage $QUEUE_FILE on attempt $attempt/$max_attempts."
+              elif git diff --cached --quiet -- "$QUEUE_FILE"; then
+                echo "::notice::No queue changes needed; request $GITHUB_RUN_ID-$GITHUB_RUN_ATTEMPT is already queued."
+                exit 0
+              elif ! git commit -m "Schedule MainlineTeamTests on $SYSTEM_NAME at $RUN_AT_ISO"; then
+                echo "::warning::Could not commit $QUEUE_FILE on attempt $attempt/$max_attempts; see git output above."
+              elif git push origin "HEAD:$DEFAULT_BRANCH"; then
+                echo "::notice::Scheduled MainlineTeamTests on $SYSTEM_NAME at $RUN_AT_ISO (request $GITHUB_RUN_ID-$GITHUB_RUN_ATTEMPT)."
+                exit 0
+              else
+                echo "::warning::Could not push $QUEUE_FILE on attempt $attempt/$max_attempts; check git output for conflicts, contents: write permission, or branch protection."
+              fi
             fi
-            sleep $((attempt * 5))
+            # Back off before retrying against fresh remote state, but do not delay the final failure.
+            if [ "$attempt" -lt "$max_attempts" ]; then
+              sleep $((attempt * 5))
+            fi
           done
-          echo "::error::Could not update $QUEUE_FILE on $DEFAULT_BRANCH."
+          echo "::error::Could not update $QUEUE_FILE on $DEFAULT_BRANCH after $max_attempts attempts; see git diagnostics above."
           exit 1
 
   check-runner:
