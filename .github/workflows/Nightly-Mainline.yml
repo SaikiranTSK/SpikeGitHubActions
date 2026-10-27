@@ -20,6 +20,10 @@ jobs:
           - Technopolis6
  
     uses: ./.github/workflows/MainlineTeamTests.yml
+    # Allow the ScheduleOnly job of MainlineTeamTests.yml (contents: write); GitHub rejects the call otherwise.
+    # That job never runs when called from here; the test jobs keep contents: read.
+    permissions:
+      contents: write
     with:
       SystemName: ${{ matrix.system }}
       Branch: master

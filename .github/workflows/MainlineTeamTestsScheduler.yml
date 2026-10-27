@@ -1,0 +1,84 @@
+# One-time dynamic scheduler for MainlineTeamTests ("run at this time").
+# GitHub cron cannot take runtime inputs, so this is a workaround: MainlineTeamTests.yml with ScheduleOnly=true saves
+# the inputs + RunAtUtc in .github/schedules/mainline-team-tests-queue.json. This workflow checks the queue every
+# 5 minutes, removes the requests that are due (runAtUtc <= now UTC) and dispatches MainlineTeamTests.yml with their
+# saved inputs (ScheduleOnly=false). Future requests stay queued. No systems or parameters are configured here.
+# A due request is removed from the queue before it is dispatched, so it never starts twice; if the dispatch fails
+# the request is printed in the log and the run fails. GitHub may start cron runs some minutes late.
+name: MainlineTeamTests Scheduler
+
+on:
+  schedule:
+    - cron: '*/5 * * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: mainline-team-tests-scheduler
+  cancel-in-progress: false
+
+jobs:
+  dispatch-due:
+    name: Start due MainlineTeamTests requests
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: write   # update the queue file
+      actions: write    # workflow_dispatch MainlineTeamTests.yml
+    env:
+      GH_TOKEN: ${{ github.token }}
+      REPO: ${{ github.repository }}
+      QUEUE_FILE: .github/schedules/mainline-team-tests-queue.json
+      DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
+    steps:
+      - name: Get queue file
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.repository.default_branch }}
+          sparse-checkout: .github/schedules
+
+      - name: Take due requests from queue
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          due="$RUNNER_TEMP/due.json"
+          # Retry on push conflicts (a new request may be added at the same time).
+          for attempt in 1 2 3 4 5; do
+            git fetch -q --depth=1 origin "$DEFAULT_BRANCH"
+            git reset -q --hard FETCH_HEAD
+            if [ ! -s "$QUEUE_FILE" ]; then echo '[]' > "$due"; exit 0; fi
+            now="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+            jq --arg now "$now" '[.[] | select(.runAtUtc <= $now)]' "$QUEUE_FILE" > "$due"
+            count=$(jq length "$due")
+            echo "$count due request(s) at $now; $(jq length "$QUEUE_FILE") in queue."
+            [ "$count" -gt 0 ] || exit 0
+            jq --arg now "$now" '[.[] | select(.runAtUtc > $now)]' "$QUEUE_FILE" > "$RUNNER_TEMP/queue.json"
+            mv "$RUNNER_TEMP/queue.json" "$QUEUE_FILE"
+            git add "$QUEUE_FILE"
+            git commit -q -m "Start $count scheduled MainlineTeamTests request(s)"
+            if git push -q origin "HEAD:$DEFAULT_BRANCH"; then exit 0; fi
+            sleep $((attempt * 5))
+          done
+          echo "::error::Could not update $QUEUE_FILE on $DEFAULT_BRANCH."
+          exit 1
+
+      - name: Dispatch MainlineTeamTests
+        run: |
+          set -euo pipefail
+          failed=0
+          while IFS= read -r item; do
+            [ -n "$item" ] || continue
+            id=$(jq -r .id <<< "$item")
+            body=$(jq -c --arg ref "$DEFAULT_BRANCH" '{ref: $ref,
+              inputs: ((.inputs | map_values(if . == null then "" else tostring end)) + {ScheduleOnly: "false"})}' <<< "$item")
+            if gh api -X POST "repos/$REPO/actions/workflows/MainlineTeamTests.yml/dispatches" --input - <<< "$body"; then
+              echo "::notice::Started request $id: $(jq -c .inputs <<< "$item")"
+            else
+              echo "::error::Could not start request $id (removed from queue): $item"
+              failed=1
+            fi
+          done < <(jq -c '.[]' "$RUNNER_TEMP/due.json")
+          exit $failed

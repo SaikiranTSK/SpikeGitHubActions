@@ -1,7 +1,7 @@
 # GitHub Actions version of Jenkins\PipelineScriptBackup\MainlineTeamTests.groovy
 # Docs: docs\pipelines\MainlineTeamTests.md
 name: MainlineTeamTests
-run-name: ${{ inputs.SystemName }} - ${{ inputs.RunAllJobs && 'AllJobs' || inputs.JobName }}
+run-name: ${{ inputs.ScheduleOnly && format('Schedule at {0} UTC - ', inputs.RunAtUtc) || '' }}${{ inputs.SystemName }} - ${{ inputs.RunAllJobs && 'AllJobs' || inputs.JobName }}
 
 on:
   workflow_dispatch:
@@ -101,6 +101,19 @@ on:
         required: false
         type: string
         default: \\code1.emi.philips.com\storage\SDI_Publish\TestSystems\Backups
+      # One-time dynamic scheduling ("run at this time"). GitHub cron cannot take runtime inputs, so with
+      # ScheduleOnly the inputs above are saved in .github/schedules/mainline-team-tests-queue.json and
+      # MainlineTeamTestsScheduler.yml dispatches this workflow with them once RunAtUtc is reached.
+      ScheduleOnly:
+        description: Do not run now; schedule a one-time run at RunAtUtc with the inputs above
+        required: false
+        type: boolean
+        default: false
+      RunAtUtc:
+        description: "Start time in UTC (YYYY-MM-DD HH:mm), required when ScheduleOnly is checked"
+        required: false
+        type: string
+        default: ''
 
   # Same pipeline, called by ExternalInterfaceAutomation.yml (Jenkins job with the same stages).
   workflow_call:
@@ -125,7 +138,90 @@ permissions:
   contents: read
 
 jobs:
+  # ScheduleOnly: append this request to the queue file on the default branch; no tests run in this run.
+  schedule-request:
+    name: Schedule ${{ inputs.SystemName }} at ${{ inputs.RunAtUtc }} UTC
+    if: ${{ inputs.ScheduleOnly }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: write
+    env:
+      QUEUE_FILE: .github/schedules/mainline-team-tests-queue.json
+      DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
+      RUN_AT_UTC: ${{ inputs.RunAtUtc }}
+      SYSTEM_NAME: ${{ inputs.SystemName }}
+      BRANCH: ${{ inputs.Branch }}
+      USE_INSTALLED_PDC: ${{ inputs.UseInstalledPDC }}
+      JOB_NAME: ${{ inputs.JobName }}
+      RUN_ALL_JOBS: ${{ inputs.RunAllJobs }}
+      ALL_JOBS: ${{ inputs.AllJobs }}
+      TEST_CATEGORIES: ${{ inputs.TestCategories }}
+      TEST_END_TIME: ${{ inputs.TEST_END_TIME }}
+      RESTORE_NAME: ${{ inputs.RestoreName }}
+      RESTORE_FROM_LOCATION: ${{ inputs.RestoreFromLocation }}
+    steps:
+      - name: Validate RunAtUtc
+        id: when
+        run: |
+          set -euo pipefail
+          run_at="$(sed 's/^[[:space:]]*//; s/[[:space:]]*$//' <<< "$RUN_AT_UTC")"
+          if ! [[ "$run_at" =~ ^[0-9]{4}-[0-9]{2}-[0-9]{2}\ [0-9]{2}:[0-9]{2}$ ]] ||
+             [ "$(date -u -d "$run_at UTC" '+%Y-%m-%d %H:%M' 2>/dev/null)" != "$run_at" ]; then
+            echo "::error::RunAtUtc '$RUN_AT_UTC' is missing or invalid. Use UTC format YYYY-MM-DD HH:mm, e.g. 2026-01-31 18:30."
+            exit 1
+          fi
+          iso="$(date -u -d "$run_at UTC" +%Y-%m-%dT%H:%M:%SZ)"
+          if [ "$(date -u -d "$run_at UTC" +%s)" -le "$(date -u +%s)" ]; then
+            echo "::warning::RunAtUtc $run_at is in the past; the run starts at the next scheduler check."
+          fi
+          echo "iso=$iso" >> "$GITHUB_OUTPUT"
+
+      - name: Get queue file
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.repository.default_branch }}
+          sparse-checkout: .github/schedules
+
+      - name: Add request to queue
+        env:
+          RUN_AT_ISO: ${{ steps.when.outputs.iso }}
+        run: |
+          set -euo pipefail
+          entry=$(jq -n \
+            --arg id "$GITHUB_RUN_ID-$GITHUB_RUN_ATTEMPT" \
+            --arg createdAt "$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
+            --arg runAtUtc "$RUN_AT_ISO" \
+            --arg requestedBy "$GITHUB_ACTOR" \
+            '{id: $id, createdAt: $createdAt, runAtUtc: $runAtUtc, requestedBy: $requestedBy, inputs: {
+                SystemName: env.SYSTEM_NAME, Branch: env.BRANCH, UseInstalledPDC: (env.USE_INSTALLED_PDC == "true"),
+                JobName: env.JOB_NAME, RunAllJobs: (env.RUN_ALL_JOBS == "true"), AllJobs: env.ALL_JOBS,
+                TestCategories: env.TEST_CATEGORIES, TEST_END_TIME: env.TEST_END_TIME,
+                RestoreName: env.RESTORE_NAME, RestoreFromLocation: env.RESTORE_FROM_LOCATION}}')
+          echo "$entry" | jq .
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          # Retry on push conflicts (other requests or the scheduler may update the queue at the same time).
+          for attempt in 1 2 3 4 5; do
+            git fetch -q --depth=1 origin "$DEFAULT_BRANCH"
+            git reset -q --hard FETCH_HEAD
+            mkdir -p "$(dirname "$QUEUE_FILE")"
+            [ -s "$QUEUE_FILE" ] || echo '[]' > "$QUEUE_FILE"
+            jq --argjson e "$entry" '. + [$e] | sort_by(.runAtUtc)' "$QUEUE_FILE" > "$RUNNER_TEMP/queue.json"
+            mv "$RUNNER_TEMP/queue.json" "$QUEUE_FILE"
+            git add "$QUEUE_FILE"
+            git commit -q -m "Schedule MainlineTeamTests on $SYSTEM_NAME at $RUN_AT_ISO"
+            if git push -q origin "HEAD:$DEFAULT_BRANCH"; then
+              echo "::notice::Scheduled MainlineTeamTests on $SYSTEM_NAME at $RUN_AT_ISO (request $GITHUB_RUN_ID-$GITHUB_RUN_ATTEMPT)."
+              exit 0
+            fi
+            sleep $((attempt * 5))
+          done
+          echo "::error::Could not update $QUEUE_FILE on $DEFAULT_BRANCH."
+          exit 1
+
   check-runner:
+    if: ${{ !inputs.ScheduleOnly }}
     uses: ./.github/workflows/check-runner.yml
     with:
        system-name: ${{ inputs.SystemName }}
@@ -134,7 +230,7 @@ jobs:
   run-tests:
     name: MainlineTeamTests on ${{ inputs.SystemName }}
     needs: check-runner
-    if: ${{ !failure() && !cancelled() }}
+    if: ${{ !failure() && !cancelled() && !inputs.ScheduleOnly }}
     runs-on: [self-hosted, Windows, '${{ inputs.SystemName }}']
     # lock(resource: "lock_" + SystemName): no concurrency group on purpose. The side PC has one runner, so jobs for it
     # wait in the runner queue one after the other, like the Jenkins lock queue. A concurrency group would keep only
