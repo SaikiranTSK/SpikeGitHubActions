@@ -19,7 +19,7 @@ jobs:
     timeout-minutes: 10
     env:
       SYSTEMS_FILE: .github/runner-systems.txt
-      WORKFLOW_FILES: ".github/workflows/MainlineTeamTests.yml"
+      WORKFLOW_FILES: ".github/workflows/MainlineTeamTests.yml .github/workflows/TestStarterDevelopment.yml"
     steps:
       - name: Checkout default branch
         uses: actions/checkout@v4
