@@ -13,6 +13,8 @@ on:
         options:
           - AntonMauve-VTM
           - VTP01_BLR
+          - JacobVanCampen-VTM
+          - Kratu_BLR
           - Kanva_BLR
           - Bhargava_BLR
       Branch:
