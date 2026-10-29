@@ -101,7 +101,7 @@ jobs:
       SAVE_SCREENSHOTS_AND_VIDEOS_TO_LOCATION: ${{ inputs.SaveScreenshotsAndVideosToLocation }}
     steps:
       - name: Get pipeline scripts
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
           sparse-checkout: .github
 

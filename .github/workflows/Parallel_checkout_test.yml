@@ -80,7 +80,7 @@ jobs:
           Write-Host "Checkout released at $([DateTimeOffset]::FromUnixTimeMilliseconds($startMs).ToString('HH:mm:ss.fff')) UTC"
 
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
           clean: true
           fetch-depth: 1
