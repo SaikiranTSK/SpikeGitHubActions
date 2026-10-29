@@ -17,4 +17,6 @@ jobs:
         run: |
           robocopy '\\nlybstqvp4dt7nv.code1.emi.philips.com\JenkinsBatches\Tools' 'D:\Jenkins\Tools' /E /R:2 /W:5
           if ($LASTEXITCODE -ge 8) { exit $LASTEXITCODE }
+          robocopy '\\code1.emi.philips.com\storage\IGT-ATT\Scheduler\Tools' 'C:\Temp\FAST\AuxiliaryInstallationScript' /E /R:2 /W:5
+          if ($LASTEXITCODE -ge 8) { exit $LASTEXITCODE }
           exit 0
