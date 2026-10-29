@@ -1,0 +1,65 @@
+name: Parallel Checkout Test
+
+# Purpose: verify that different self-hosted runners (one per PC) check out the
+# repo AT THE SAME TIME. Stops right after checkout - no build/test steps.
+# Place this file at: .github/workflows/parallel-checkout-test.yml
+
+on:
+  workflow_dispatch:        # manual start: Actions tab -> Parallel Checkout Test -> Run workflow
+  schedule:
+    # Scheduled run: 09:08 UTC = 14:38 IST (about 5 min from now, Oct 29 2026).
+    # Cron runs only from the default branch and GitHub may delay it a few minutes.
+    # Delete this schedule after the test.
+    - cron: "8 9 29 10 *"
+
+concurrency:
+  group: parallel-checkout-test-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  checkout-test:
+    name: checkout on ${{ matrix.runner }}
+    strategy:
+      fail-fast: false      # one failure must not cancel the others
+      max-parallel: 6       # all runners start together
+      matrix:
+        runner:
+          - AntonMauve-VTM
+          - Bhargava_BLR
+          - Kratu_BLR
+          - VTP01_BLR
+          - Kanva_BLR
+          - JacobVanCampen-VTM
+    # Each runner has a unique label equal to its name, so each matrix job
+    # lands on a different PC.
+    runs-on: [self-hosted, Windows, X64, "${{ matrix.runner }}"]
+    timeout-minutes: 15
+
+    steps:
+      - name: Record time before checkout
+        id: pre
+        shell: pwsh
+        run: |
+          $t = [DateTime]::UtcNow.ToString("HH:mm:ss.fff")
+          "start=$t" >> $env:GITHUB_OUTPUT
+          Write-Host "[$env:RUNNER_NAME] checkout starting at $t UTC"
+
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          clean: true
+          fetch-depth: 1
+
+      - name: Record time after checkout and report
+        shell: pwsh
+        run: |
+          $end = [DateTime]::UtcNow.ToString("HH:mm:ss.fff")
+          $start = "${{ steps.pre.outputs.start }}"
+          Write-Host "[$env:RUNNER_NAME] checkout finished at $end UTC"
+          @"
+          ### Runner: $env:RUNNER_NAME ($env:COMPUTERNAME)
+          | Checkout start (UTC) | Checkout end (UTC) |
+          |---|---|
+          | $start | $end |
+          "@ >> $env:GITHUB_STEP_SUMMARY
+      # Intentionally stops here: parallel checkout verification only.
