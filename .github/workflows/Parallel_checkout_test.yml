@@ -38,10 +38,10 @@ jobs:
     steps:
       - name: Record time before checkout
         id: pre
-        shell: pwsh
+        shell: powershell
         run: |
           $t = [DateTime]::UtcNow.ToString("HH:mm:ss.fff")
-          "start=$t" >> $env:GITHUB_OUTPUT
+          "start=$t" | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append
           Write-Host "[$env:RUNNER_NAME] checkout starting at $t UTC"
 
       - name: Checkout repository
@@ -51,7 +51,7 @@ jobs:
           fetch-depth: 1
 
       - name: Record time after checkout and report
-        shell: pwsh
+        shell: powershell
         run: |
           $end = [DateTime]::UtcNow.ToString("HH:mm:ss.fff")
           $start = "${{ steps.pre.outputs.start }}"
@@ -61,5 +61,5 @@ jobs:
           | Checkout start (UTC) | Checkout end (UTC) |
           |---|---|
           | $start | $end |
-          "@ >> $env:GITHUB_STEP_SUMMARY
+          "@ | Out-File -FilePath $env:GITHUB_STEP_SUMMARY -Encoding utf8 -Append
       # Intentionally stops here: parallel checkout verification only.
