@@ -6,11 +6,6 @@ name: Parallel Checkout Test
 
 on:
   workflow_dispatch:        # manual start: Actions tab -> Parallel Checkout Test -> Run workflow
-  schedule:
-    # Scheduled run: 09:08 UTC = 14:38 IST (about 5 min from now, Oct 29 2026).
-    # Cron runs only from the default branch and GitHub may delay it a few minutes.
-    # Delete this schedule after the test.
-    - cron: "8 9 29 10 *"
 
 concurrency:
   group: parallel-checkout-test-${{ github.ref }}
@@ -38,10 +33,10 @@ jobs:
     steps:
       - name: Record time before checkout
         id: pre
-        shell: powershell
+        shell: powershell    # Windows PowerShell 5.1 (pwsh is not installed on these PCs)
         run: |
           $t = [DateTime]::UtcNow.ToString("HH:mm:ss.fff")
-          "start=$t" | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append
+          Add-Content -Path $env:GITHUB_OUTPUT -Value "start=$t" -Encoding ascii
           Write-Host "[$env:RUNNER_NAME] checkout starting at $t UTC"
 
       - name: Checkout repository
@@ -56,10 +51,8 @@ jobs:
           $end = [DateTime]::UtcNow.ToString("HH:mm:ss.fff")
           $start = "${{ steps.pre.outputs.start }}"
           Write-Host "[$env:RUNNER_NAME] checkout finished at $end UTC"
-          @"
-          ### Runner: $env:RUNNER_NAME ($env:COMPUTERNAME)
-          | Checkout start (UTC) | Checkout end (UTC) |
-          |---|---|
-          | $start | $end |
-          "@ | Out-File -FilePath $env:GITHUB_STEP_SUMMARY -Encoding utf8 -Append
+          Add-Content -Path $env:GITHUB_STEP_SUMMARY -Encoding ascii -Value "### Runner: $env:RUNNER_NAME ($env:COMPUTERNAME)"
+          Add-Content -Path $env:GITHUB_STEP_SUMMARY -Encoding ascii -Value "| Checkout start (UTC) | Checkout end (UTC) |"
+          Add-Content -Path $env:GITHUB_STEP_SUMMARY -Encoding ascii -Value "|---|---|"
+          Add-Content -Path $env:GITHUB_STEP_SUMMARY -Encoding ascii -Value "| $start | $end |"
       # Intentionally stops here: parallel checkout verification only.
