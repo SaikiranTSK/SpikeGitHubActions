@@ -1,0 +1,83 @@
+name: Parallel checkout diagnostic
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  checkout:
+    name: Checkout - ${{ matrix.system }}
+    strategy:
+      fail-fast: false
+      matrix:
+        system:
+          - AntonMauve-VTM
+          - VTP01_BLR
+          - JacobVanCampen-VTM
+          - Kratu_BLR
+          - Kanva_BLR
+          - Bhargava_BLR
+
+    runs-on: [self-hosted, Windows, '${{ matrix.system }}']
+    timeout-minutes: 15
+
+    defaults:
+      run:
+        shell: powershell
+
+    env:
+      SYSTEM_NAME: ${{ matrix.system }}
+
+    steps:
+      - name: Record checkout start
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $start = [DateTimeOffset]::UtcNow.ToString('o')
+          "CHECKOUT_START_UTC=$start" >> $env:GITHUB_ENV
+          Write-Output "System: $env:SYSTEM_NAME"
+          Write-Output "Actual runner: $env:RUNNER_NAME"
+          Write-Output "Computer: $env:COMPUTERNAME"
+          Write-Output "Checkout start UTC: $start"
+
+      - name: Get pipeline scripts
+        id: checkout
+        uses: actions/checkout@v4
+        with:
+          sparse-checkout: .github
+          persist-credentials: false
+
+      - name: Record checkout end and summary
+        if: always()
+        env:
+          CHECKOUT_OUTCOME: ${{ steps.checkout.outcome }}
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $end = [DateTimeOffset]::UtcNow
+          if (-not $env:CHECKOUT_START_UTC) {
+            throw 'Checkout start timestamp is missing.'
+          }
+          $start = [DateTimeOffset]::Parse($env:CHECKOUT_START_UTC)
+          $seconds = [Math]::Round(($end - $start).TotalSeconds, 3)
+          $endUtc = $end.ToString('o')
+
+          Write-Output "Actual runner: $env:RUNNER_NAME"
+          Write-Output "Checkout start UTC: $env:CHECKOUT_START_UTC"
+          Write-Output "Checkout end UTC: $endUtc"
+          Write-Output "Duration seconds: $seconds"
+          Write-Output "Checkout outcome: $env:CHECKOUT_OUTCOME"
+
+          @"
+          ## Checkout timing: $env:SYSTEM_NAME
+
+          | Field | Value |
+          | --- | --- |
+          | System label | $env:SYSTEM_NAME |
+          | Actual runner | $env:RUNNER_NAME |
+          | Computer | $env:COMPUTERNAME |
+          | Start UTC | $env:CHECKOUT_START_UTC |
+          | End UTC | $endUtc |
+          | Duration seconds | $seconds |
+          | Checkout outcome | $env:CHECKOUT_OUTCOME |
+          "@ >> $env:GITHUB_STEP_SUMMARY
