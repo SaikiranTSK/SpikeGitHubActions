@@ -1,22 +1,46 @@
-name: Parallel Checkout Test
+name: Parallel Checkout Barrier Test
 
-# Purpose: verify that different self-hosted runners (one per PC) check out the
-# repo AT THE SAME TIME. Stops right after checkout - no build/test steps.
-# Place this file at: .github/workflows/parallel-checkout-test.yml
+# Proves that all self-hosted runners start the repo checkout at the SAME instant.
+# 1. "prepare" picks one shared UTC start time (now + barrier_seconds).
+# 2. Every runner job waits (busy-waits to the millisecond) until that time.
+# 3. All runners then run actions/checkout together; start/end are recorded in UTC.
+# 4. "verify" compares all runners and prints PASS/FAIL for simultaneous access.
+#
+# Place at: .github/workflows/parallel-checkout-barrier.yml
+# Needs: one GitHub-hosted runner (ubuntu-latest) for prepare/verify.
+# Run:   Actions -> Parallel Checkout Barrier Test -> Run workflow
 
 on:
-  workflow_dispatch:        # manual start: Actions tab -> Parallel Checkout Test -> Run workflow
+  workflow_dispatch:
+    inputs:
+      barrier_seconds:
+        description: "Seconds to wait so every runner is ready before checkout starts"
+        required: false
+        default: "45"
 
 concurrency:
-  group: parallel-checkout-test-${{ github.ref }}
+  group: parallel-checkout-barrier-${{ github.ref }}
   cancel-in-progress: false
 
 jobs:
+  prepare:
+    name: pick shared start time
+    runs-on: ubuntu-latest
+    outputs:
+      target: ${{ steps.t.outputs.target }}
+    steps:
+      - id: t
+        run: |
+          target=$(( $(date -u +%s) + ${{ github.event.inputs.barrier_seconds || '45' }} ))
+          echo "target=$target" >> "$GITHUB_OUTPUT"
+          echo "Shared start time (UTC): $(date -u -d @$target '+%Y-%m-%d %H:%M:%S')"
+
   checkout-test:
     name: checkout on ${{ matrix.runner }}
+    needs: prepare
     strategy:
-      fail-fast: false      # one failure must not cancel the others
-      max-parallel: 6       # all runners start together
+      fail-fast: false
+      max-parallel: 6
       matrix:
         runner:
           - AntonMauve-VTM
@@ -25,34 +49,108 @@ jobs:
           - VTP01_BLR
           - Kanva_BLR
           - JacobVanCampen-VTM
-    # Each runner has a unique label equal to its name, so each matrix job
-    # lands on a different PC.
     runs-on: [self-hosted, Windows, X64, "${{ matrix.runner }}"]
     timeout-minutes: 15
 
     steps:
-      - name: Record time before checkout
-        id: pre
-        shell: powershell    # Windows PowerShell 5.1 (pwsh is not installed on these PCs)
+      - name: Log PC clock sync status (informational)
+        shell: powershell
+        continue-on-error: true
         run: |
-          $t = [DateTime]::UtcNow.ToString("HH:mm:ss.fff")
-          Add-Content -Path $env:GITHUB_OUTPUT -Value "start=$t" -Encoding ascii
-          Write-Host "[$env:RUNNER_NAME] checkout starting at $t UTC"
+          Write-Host "Computer: $env:COMPUTERNAME  Runner: $env:RUNNER_NAME"
+          w32tm /query /status | Select-String "Source|Last Successful Sync Time|Stratum"
+
+      - name: Wait for shared start time
+        id: barrier
+        shell: powershell
+        run: |
+          $target = [DateTimeOffset]::FromUnixTimeSeconds([long]"${{ needs.prepare.outputs.target }}")
+          $now = [DateTimeOffset]::UtcNow
+          $late = 0
+          if ($now -gt $target) {
+            $late = [int]($now - $target).TotalMilliseconds
+            Write-Host "WARNING: runner reached the barrier $late ms AFTER the shared start time"
+          } else {
+            Write-Host "Waiting $([int]($target - $now).TotalSeconds) s for shared start time $($target.ToString('HH:mm:ss')) UTC"
+            while ([DateTimeOffset]::UtcNow -lt $target) { Start-Sleep -Milliseconds 5 }
+          }
+          $startMs = [DateTimeOffset]::UtcNow.ToUnixTimeMilliseconds()
+          Add-Content -Path $env:GITHUB_OUTPUT -Encoding ascii -Value "start_ms=$startMs"
+          Add-Content -Path $env:GITHUB_OUTPUT -Encoding ascii -Value "late_ms=$late"
+          Write-Host "Checkout released at $([DateTimeOffset]::FromUnixTimeMilliseconds($startMs).ToString('HH:mm:ss.fff')) UTC"
 
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
           clean: true
           fetch-depth: 1
+        env:
+          # Logs every HTTPS request git makes to github.com (shows the real repo access).
+          # NOTE: timestamps inside the git trace use this PC's LOCAL time zone.
+          GIT_TRACE_CURL: "1"
+          GIT_TRACE_CURL_NO_DATA: "1"
+          GIT_TRACE_REDACT: "1"
 
-      - name: Record time after checkout and report
+      - name: Record result
         shell: powershell
         run: |
-          $end = [DateTime]::UtcNow.ToString("HH:mm:ss.fff")
-          $start = "${{ steps.pre.outputs.start }}"
-          Write-Host "[$env:RUNNER_NAME] checkout finished at $end UTC"
-          Add-Content -Path $env:GITHUB_STEP_SUMMARY -Encoding ascii -Value "### Runner: $env:RUNNER_NAME ($env:COMPUTERNAME)"
-          Add-Content -Path $env:GITHUB_STEP_SUMMARY -Encoding ascii -Value "| Checkout start (UTC) | Checkout end (UTC) |"
-          Add-Content -Path $env:GITHUB_STEP_SUMMARY -Encoding ascii -Value "|---|---|"
-          Add-Content -Path $env:GITHUB_STEP_SUMMARY -Encoding ascii -Value "| $start | $end |"
-      # Intentionally stops here: parallel checkout verification only.
+          $endMs   = [DateTimeOffset]::UtcNow.ToUnixTimeMilliseconds()
+          $startMs = [long]"${{ steps.barrier.outputs.start_ms }}"
+          $lateMs  = [int]"${{ steps.barrier.outputs.late_ms }}"
+          $dur     = $endMs - $startMs
+          $json = '{"runner":"${{ matrix.runner }}","computer":"' + $env:COMPUTERNAME + '","start_ms":' + $startMs + ',"end_ms":' + $endMs + ',"late_ms":' + $lateMs + '}'
+          Set-Content -Path "timing-${{ matrix.runner }}.json" -Value $json -Encoding ascii
+          $s = [DateTimeOffset]::FromUnixTimeMilliseconds($startMs).ToString("HH:mm:ss.fff")
+          $e = [DateTimeOffset]::FromUnixTimeMilliseconds($endMs).ToString("HH:mm:ss.fff")
+          Add-Content -Path $env:GITHUB_STEP_SUMMARY -Encoding ascii -Value "### ${{ matrix.runner }} ($env:COMPUTERNAME)"
+          Add-Content -Path $env:GITHUB_STEP_SUMMARY -Encoding ascii -Value "| Checkout start (UTC) | Checkout end (UTC) | Duration ms | Late for barrier ms |"
+          Add-Content -Path $env:GITHUB_STEP_SUMMARY -Encoding ascii -Value "|---|---|---|---|"
+          Add-Content -Path $env:GITHUB_STEP_SUMMARY -Encoding ascii -Value "| $s | $e | $dur | $lateMs |"
+
+      - name: Upload timing
+        uses: actions/upload-artifact@v4
+        with:
+          name: timing-${{ matrix.runner }}
+          path: timing-${{ matrix.runner }}.json
+
+  verify:
+    name: verify simultaneous access
+    needs: checkout-test
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: timing-*
+          merge-multiple: true
+          path: t
+
+      - name: Compare all runners
+        run: |
+          cat t/*.json | jq -s '
+            {
+              runners: length,
+              max_start: (map(.start_ms) | max),
+              min_start: (map(.start_ms) | min),
+              min_end:   (map(.end_ms)   | min),
+              max_end:   (map(.end_ms)   | max)
+            }
+            | . + {
+                start_spread_ms: (.max_start - .min_start),
+                common_overlap_ms: (.min_end - .max_start)
+              }' | tee result.json
+          runners=$(jq .runners result.json)
+          spread=$(jq .start_spread_ms result.json)
+          overlap=$(jq .common_overlap_ms result.json)
+          {
+            echo "## Simultaneous checkout result"
+            echo "| Runners reporting | Start spread (ms) | Time ALL were downloading together (ms) |"
+            echo "|---|---|---|"
+            echo "| $runners / 6 | $spread | $overlap |"
+            echo
+            if [ "$runners" -eq 6 ] && [ "$overlap" -gt 0 ] && [ "$spread" -le 1000 ]; then
+              echo "**PASS** - all 6 runners started checkout within 1 s and all were running together."
+            else
+              echo "**FAIL** - not all runners overlapped (check late_ms / clock sync)."
+            fi
+          } >> "$GITHUB_STEP_SUMMARY"
