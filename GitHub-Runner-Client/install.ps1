@@ -122,7 +122,8 @@ $configArgs = @(
     '--name', $RunnerName,
     '--labels', $labelText,
     '--work', $WorkDir,
-    '--runasservice'
+    '--runasservice',
+    '--disableupdate'
 )
 if ($ServiceAccount -and -not $UseNetworkService) {
     $configArgs += @('--windowslogonaccount', $ServiceAccount, '--windowslogonpassword', $ServicePassword)
