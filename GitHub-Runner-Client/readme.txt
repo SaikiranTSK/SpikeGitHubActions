@@ -51,3 +51,20 @@ Jenkins vs GitHub Actions:
    edit [NODENAME] in Jenkins-Agent.xml      install.cmd <SidePcName> <Token>
    service jenkins-nlybstqvp4dt7nv-agent     service actions.runner.<owner>-<repo>.<SidePcName>
    connects to Jenkins server :8080          outbound HTTPS to github.com only
+
+RUNNER UPDATES
+======================================================================================
+Runners installed with this package do NOT update themselves
+(config option --disableupdate).
+
+Merging a runner-version PR changes this repository only. The PCs stay on the
+old version until the admin updates them.
+
+To update a PC (about 2 minutes), only when the runner is Idle:
+  1. Get the latest GitHub-Runner-Client folder from the main branch.
+  2. Create a new registration token (Settings > Actions > Runners > New).
+  3. Run uninstall.cmd, then install.cmd <SystemName> <Token>.
+  4. Check the Runners page: status Idle and the new version number.
+
+Update all PCs within about 2 weeks of a new release. A runner more than
+30 days behind a release no longer receives jobs.
