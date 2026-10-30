@@ -1,0 +1,93 @@
+name: runner-version-check
+
+on:
+  schedule:
+    - cron: '0 4 * * 1'          # every Monday 04:00 UTC
+  workflow_dispatch:
+    inputs:
+      test_version:
+        description: 'TEST ONLY: treat this as the latest runner version (for example 2.999.0). Leave empty for a real check.'
+        required: false
+        default: ''
+
+permissions:
+  contents: write
+  pull-requests: write
+
+env:
+  RUNNER_DIR: GitHub-Runner-Client
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Compare current and latest runner version
+        id: v
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TEST_VERSION: ${{ inputs.test_version }}
+        run: |
+          set -euo pipefail
+
+          current=$(grep -oP '\$RunnerVersion\s*=\s*.\K[0-9]+\.[0-9]+\.[0-9]+' "$RUNNER_DIR/install.ps1" | head -n1)
+
+          if [ -n "${TEST_VERSION:-}" ]; then
+            latest="$TEST_VERSION"
+          else
+            latest=$(gh api repos/actions/runner/releases/latest --jq .tag_name | sed 's/^v//')
+          fi
+
+          if [ -z "$current" ] || [ -z "$latest" ]; then
+            echo "::error::Could not read versions (current='$current', latest='$latest')"
+            exit 1
+          fi
+
+          newest=$(printf '%s\n%s\n' "$current" "$latest" | sort -V | tail -n1)
+          if [ "$latest" != "$current" ] && [ "$newest" = "$latest" ]; then
+            update=true
+          else
+            update=false
+          fi
+
+          echo "current=$current" >> "$GITHUB_OUTPUT"
+          echo "latest=$latest"   >> "$GITHUB_OUTPUT"
+          echo "update=$update"   >> "$GITHUB_OUTPUT"
+          echo "Current: $current | Latest: $latest | PR needed: $update" >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Update version in install.ps1 and readme.txt
+        if: steps.v.outputs.update == 'true'
+        run: |
+          set -euo pipefail
+          current='${{ steps.v.outputs.current }}'
+          latest='${{ steps.v.outputs.latest }}'
+          esc=${current//./\\.}
+          sed -i "s/$esc/$latest/g" "$RUNNER_DIR/install.ps1" "$RUNNER_DIR/readme.txt"
+          git diff --stat
+
+      - name: Open pull request
+        if: steps.v.outputs.update == 'true'
+        uses: peter-evans/create-pull-request@v7
+        with:
+          branch: runner-update-${{ steps.v.outputs.latest }}
+          base: main
+          add-paths: |
+            ${{ env.RUNNER_DIR }}/install.ps1
+            ${{ env.RUNNER_DIR }}/readme.txt
+          commit-message: "Update GitHub runner to ${{ steps.v.outputs.latest }}"
+          title: "Update GitHub runner to ${{ steps.v.outputs.latest }}"
+          body: |
+            New runner release: https://github.com/actions/runner/releases/tag/v${{ steps.v.outputs.latest }}
+
+            This PR changes `$RunnerVersion` in `install.ps1` and the version in `readme.txt`
+            from **${{ steps.v.outputs.current }}** to **${{ steps.v.outputs.latest }}**.
+
+            **Merging updates the repository only, not the PCs.**
+
+            Admin checklist:
+            - [ ] Release notes read
+            - [ ] PR merged
+            - [ ] Each PC updated when Idle (uninstall.cmd, then install.cmd)
+            - [ ] Runners page shows Idle and ${{ steps.v.outputs.latest }} for every PC
+            - [ ] Done within about 2 weeks of the release (30-day limit)
