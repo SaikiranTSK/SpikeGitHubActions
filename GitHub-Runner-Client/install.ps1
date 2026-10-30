@@ -19,7 +19,7 @@ param(
     [Parameter(Mandatory)] [string] $Token,
 
     [string] $RepoUrl = 'https://github.com/SaikiranTSK/SpikeGitHubActions',
-    [string] $RunnerVersion = '2.337.0',
+    [string] $RunnerVersion = '2.338.2',
     [string] $InstallDir = 'C:\actions-runner',
 
     # Runner work folder (Jenkins "Remote root directory", D:\Jenkins\ on the side PCs).
