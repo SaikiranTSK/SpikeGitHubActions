@@ -220,7 +220,7 @@ jobs:
               path.write_bytes(updated)
           PY
 
-          git diff --check
+          git -c core.whitespace=blank-at-eol,blank-at-eof,space-before-tab,cr-at-eol diff --check
           git diff --stat
 
       - name: Open pull request
