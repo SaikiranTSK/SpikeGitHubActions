@@ -16,6 +16,11 @@ permissions:
 
 env:
   RUNNER_DIR: GitHub-Runner-Client
+  # Every file that carries the runner version. One path per line.
+  # Add a new file here and it is updated in the same PR.
+  TRACKED_FILES: |
+    GitHub-Runner-Client/install.ps1
+    GitHub-Runner-Client/readme.txt
 
 jobs:
   check:
@@ -23,71 +28,120 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Compare current and latest runner version
+      - name: Decide whether a PR is needed
         id: v
         env:
           GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
           TEST_VERSION: ${{ inputs.test_version }}
         run: |
           set -euo pipefail
-
           current=$(grep -oP '\$RunnerVersion\s*=\s*.\K[0-9]+\.[0-9]+\.[0-9]+' "$RUNNER_DIR/install.ps1" | head -n1)
-
           if [ -n "${TEST_VERSION:-}" ]; then
             latest="$TEST_VERSION"
           else
             latest=$(gh api repos/actions/runner/releases/latest --jq .tag_name | sed 's/^v//')
           fi
-
           if [ -z "$current" ] || [ -z "$latest" ]; then
             echo "::error::Could not read versions (current='$current', latest='$latest')"
             exit 1
           fi
 
+          act=false
+          reason="Already on the latest version - no PR"
           newest=$(printf '%s\n%s\n' "$current" "$latest" | sort -V | tail -n1)
           if [ "$latest" != "$current" ] && [ "$newest" = "$latest" ]; then
-            update=true
-          else
-            update=false
+            branch="runner-update-$latest"
+            open_n=$(gh pr list --state open --head "$branch" --json number --jq 'length')
+            rejected_n=$(gh pr list --state closed --head "$branch" --json mergedAt --jq '[.[]|select(.mergedAt==null)]|length')
+            if [ "$open_n" -gt 0 ]; then
+              reason="PR for $latest is already open - nothing to do"
+            elif [ "$rejected_n" -gt 0 ]; then
+              reason="PR for $latest was closed without merge - not reopening"
+            else
+              act=true
+              reason="New version $latest - opening PR"
+            fi
           fi
 
           echo "current=$current" >> "$GITHUB_OUTPUT"
           echo "latest=$latest"   >> "$GITHUB_OUTPUT"
-          echo "update=$update"   >> "$GITHUB_OUTPUT"
-          echo "Current: $current | Latest: $latest | PR needed: $update" >> "$GITHUB_STEP_SUMMARY"
+          echo "act=$act"         >> "$GITHUB_OUTPUT"
+          {
+            echo "| Current | Latest | PR needed | Reason |"
+            echo "|---|---|---|---|"
+            echo "| $current | $latest | $act | $reason |"
+          } >> "$GITHUB_STEP_SUMMARY"
 
-      - name: Update version in install.ps1 and readme.txt
-        if: steps.v.outputs.update == 'true'
+      - name: Update version in tracked files
+        if: steps.v.outputs.act == 'true'
+        env:
+          CURRENT: ${{ steps.v.outputs.current }}
+          LATEST: ${{ steps.v.outputs.latest }}
         run: |
           set -euo pipefail
-          current='${{ steps.v.outputs.current }}'
-          latest='${{ steps.v.outputs.latest }}'
-          esc=${current//./\\.}
-          sed -i "s/$esc/$latest/g" "$RUNNER_DIR/install.ps1" "$RUNNER_DIR/readme.txt"
+          esc=${CURRENT//./\\.}
+          while IFS= read -r f; do
+            [ -z "$f" ] && continue
+            [ -f "$f" ] || { echo "::error::Tracked file missing: $f"; exit 1; }
+            sed -i "s/$esc/$LATEST/g" "$f"
+          done <<< "$TRACKED_FILES"
           git diff --stat
 
+      - name: Warn about untracked files still holding the old version
+        if: steps.v.outputs.act == 'true'
+        env:
+          CURRENT: ${{ steps.v.outputs.current }}
+        run: |
+          esc=${CURRENT//./\\.}
+          left=$(grep -rnE --exclude-dir=.git --exclude=runner-version-check.yml "(^|[^0-9.])${esc}([^0-9]|$)" . || true)
+          if [ -n "$left" ]; then
+            echo "::warning::Old version $CURRENT still present in files that are not tracked (see run summary)"
+            {
+              echo
+              echo "### Untracked files still holding the old version"
+              echo '```'
+              echo "$left"
+              echo '```'
+            } >> "$GITHUB_STEP_SUMMARY"
+          fi
+
       - name: Open pull request
-        if: steps.v.outputs.update == 'true'
+        id: cpr
+        if: steps.v.outputs.act == 'true'
         uses: peter-evans/create-pull-request@v7
         with:
           branch: runner-update-${{ steps.v.outputs.latest }}
           base: main
-          add-paths: |
-            ${{ env.RUNNER_DIR }}/install.ps1
-            ${{ env.RUNNER_DIR }}/readme.txt
+          add-paths: ${{ env.TRACKED_FILES }}
           commit-message: "Update GitHub runner to ${{ steps.v.outputs.latest }}"
           title: "Update GitHub runner to ${{ steps.v.outputs.latest }}"
           body: |
             New runner release: https://github.com/actions/runner/releases/tag/v${{ steps.v.outputs.latest }}
-
             This PR changes `$RunnerVersion` in `install.ps1` and the version in `readme.txt`
             from **${{ steps.v.outputs.current }}** to **${{ steps.v.outputs.latest }}**.
-
             **Merging updates the repository only, not the PCs.**
-
             Admin checklist:
             - [ ] Release notes read
             - [ ] PR merged
             - [ ] Each PC updated when Idle (uninstall.cmd, then install.cmd)
             - [ ] Runners page shows Idle and ${{ steps.v.outputs.latest }} for every PC
             - [ ] Done within about 2 weeks of the release (30-day limit)
+
+      - name: Close superseded update PRs
+        if: steps.v.outputs.act == 'true' && steps.cpr.outputs.pull-request-number != ''
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          LATEST: ${{ steps.v.outputs.latest }}
+          NEW_PR: ${{ steps.cpr.outputs.pull-request-number }}
+        run: |
+          gh pr list --state open --json number,headRefName \
+            --jq '.[] | select(.headRefName|startswith("runner-update-")) | "\(.number) \(.headRefName|sub("runner-update-";""))"' |
+          while read -r n v; do
+            [ "$v" = "$LATEST" ] && continue
+            newest=$(printf '%s\n%s\n' "$v" "$LATEST" | sort -V | tail -n1)
+            if [ "$newest" = "$LATEST" ]; then
+              gh pr close "$n" --delete-branch --comment "Superseded by #$NEW_PR (runner $LATEST)."
+            fi
+          done
