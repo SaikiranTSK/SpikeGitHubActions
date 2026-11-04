@@ -8,7 +8,7 @@ installing:
 1. On GitHub go to the repo > Settings > Actions > Runners > New self-hosted runner (Windows, x64).
    Copy the token from the "config.cmd --url ... --token XXXXX" line (valid for about 1 hour).
 2. Copy GitHub-Runner-Client to the side PC.
-   Optional (no internet on the side PC): also copy actions-runner-win-x64-2.337.0.zip into this folder.
+   Optional (no internet on the side PC): also copy actions-runner-win-x64-2.338.2.zip into this folder.
 3. Start an admin command prompt and run:
      cd <path>\GitHub-Runner-Client [enter]
      install.cmd <SidePcName> <Token> [enter]
