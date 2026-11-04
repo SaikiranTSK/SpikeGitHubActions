@@ -2,6 +2,6 @@
    on: workflow_dispatch
    jobs:
      t:
-       runs-on: [self-hosted, vtest-old]
+       runs-on: [self-hosted, vtest-client-test]
        steps:
          - run: echo hello
