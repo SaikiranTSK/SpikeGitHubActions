@@ -16,7 +16,7 @@ on:
       runner:
         description: SidePC runner label
         required: true
-        default: Bhargava_BLR
+        default: vtest-client-test
       scenario:
         description: Scenario (1 = baseline; workspace is not emptied)
         required: true
@@ -25,7 +25,7 @@ on:
       test_ref:
         description: Branch containing the test files
         required: true
-        default: main
+        default: incremental-download-test
 
 concurrency:
   group: incremental-download-${{ inputs.runner }}
@@ -151,11 +151,17 @@ jobs:
             $srcPaths += $path.Replace('/', '\')
             $blob = ($meta -split ' ')[2]
             $local = 'MISSING'
+            $filtered = ''
             if (Test-Path -LiteralPath $path) {
-              $local = (git hash-object -- $path).Trim()
+              $local = (git hash-object --no-filters -- $path).Trim()
               if ($LASTEXITCODE -ne 0) { throw "Cannot hash tracked file: $path" }
+              # Existing CRLF blobs can match raw bytes but not Git's clean-filter output.
+              if ($blob -ne $local) {
+                $filtered = (git hash-object --path=$path -- $path).Trim()
+                if ($LASTEXITCODE -ne 0) { throw "Cannot hash tracked file with Git filters: $path" }
+              }
             }
-            [pscustomobject]@{ Path = $path; SourceBlob = $blob; DestinationBlob = $local; Match = ($blob -eq $local) }
+            [pscustomobject]@{ Path = $path; SourceBlob = $blob; DestinationBlob = $local; FilteredDestinationBlob = $filtered; Match = (($blob -eq $local) -or ($blob -eq $filtered)) }
           })
           $srcCheck | Export-Csv "$ev\source-vs-destination.csv" -NoTypeInformation
           $obsolete = @($after | Where-Object { $srcPaths -notcontains $_.Path } | ForEach-Object Path)
@@ -228,6 +234,7 @@ jobs:
             $md += ""
           }
           $md += "Source vs destination (entire repository): $(@($srcCheck | Where-Object Match).Count)/$($srcCheck.Count) Git blob hashes match"
+          $md += "Source verification accepts an exact byte match or a match after Git clean filters (including configured line-ending normalization)."
           $md += "Extra workspace files not in the commit: $($obsolete.Count) $($obsolete -join ', ')"
           $md += "git status (modified/untracked/ignored): $($status.Count) entries"
           $md | Set-Content "$ev\summary.md"
