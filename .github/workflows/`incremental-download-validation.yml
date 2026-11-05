@@ -1,10 +1,11 @@
 name: Incremental Download Validation
 
 # Validates "Download only changed files" for the SidePC download mechanism.
-# Uses the same actions/checkout settings as MainlineTeamTests.yml / TestStarterDevelopment.yml
-# (sparse-checkout .github, depth 1, clean), but checks out the test branch into a separate
-# folder (<workspace>\incremental-test) so production checkouts are not touched.
-# The folder is kept between runs, so scenarios 2-8 build on scenario 1.
+# Checks out the full repository at github.workspace (not a nested checkout).
+# Unlike production's sparse .github checkout, this includes every repository folder.
+# Records existing workspace files before checkout; never explicitly deletes the workspace.
+# Checkout clean:true can remove untracked/ignored files and reset local edits.
+# Reserve the runner for this validation; other workflows use the same workspace.
 #
 # Test files: branch "incremental-download-test", folder .github/IncrementalTest
 # Run scenarios 1..8 in order; make the scenario change on the test branch before each run.
@@ -17,14 +18,14 @@ on:
         required: true
         default: vtest-client-test
       scenario:
-        description: Scenario (1 = empty destination first)
+        description: Scenario (1 = baseline; workspace is not emptied)
         required: true
         type: choice
         options: ['1', '2', '3', '4', '5', '6', '7', '8']
       test_ref:
         description: Branch containing the test files
         required: true
-        default: main
+        default: incremental-download-test
 
 concurrency:
   group: incremental-download-${{ inputs.runner }}
@@ -40,7 +41,7 @@ jobs:
         shell: powershell
     env:
       SCENARIO: ${{ inputs.scenario }}
-      TEST_DIR: ${{ github.workspace }}\incremental-test
+      TEST_DIR: ${{ github.workspace }}
 
     steps:
       - name: Prepare evidence folder and helpers
@@ -53,7 +54,7 @@ jobs:
             if (-not (Test-Path $root)) { return @() }
             $rootFull = (Resolve-Path $root).Path.TrimEnd('\') + '\'
             Get-ChildItem $root -Recurse -File -Force |
-              Where-Object { -not $_.FullName.StartsWith($rootFull + '.git\', [StringComparison]::OrdinalIgnoreCase) } |
+              Where-Object { $_.FullName.Substring($rootFull.Length) -notmatch '(^|\\)\.git(\\|$)' } |
               ForEach-Object {
                 [pscustomobject]@{
                   Path     = $_.FullName.Substring($rootFull.Length)
@@ -84,12 +85,6 @@ jobs:
           }
           exit 0
 
-      - name: Scenario 1 - empty the destination
-        if: inputs.scenario == '1'
-        run: |
-          if (Test-Path $env:TEST_DIR) { Remove-Item $env:TEST_DIR -Recurse -Force }
-          Write-Host "Destination emptied: $env:TEST_DIR"
-
       - name: Snapshot before checkout
         run: |
           . (Join-Path $env:RUNNER_TEMP 'snapshot.ps1')
@@ -111,8 +106,6 @@ jobs:
         uses: actions/checkout@v4
         with:
           ref: ${{ inputs.test_ref }}
-          path: incremental-test
-          sparse-checkout: .github
           fetch-depth: 1
           clean: true
           show-progress: true
@@ -121,7 +114,6 @@ jobs:
         run: |
           . (Join-Path $env:RUNNER_TEMP 'snapshot.ps1')
           $ev = Join-Path $env:RUNNER_TEMP 'evidence'
-          $t  = '.github\IncrementalTest\'
 
           # 1. Before/after file comparison (what was written on disk)
           $after = @(Get-Snapshot $env:TEST_DIR)
@@ -147,25 +139,26 @@ jobs:
           $rows | Export-Csv "$ev\changed-files.csv" -NoTypeInformation
           $changed = @($rows | Where-Object Status -ne 'Untouched')
 
-          # 2. Source (commit) vs destination for the test folder
+          # 2. Source (commit) vs destination for every tracked file
           Push-Location $env:TEST_DIR
           $head = (git rev-parse HEAD).Trim()
           $srcPaths = @()
-          $srcCheck = @(foreach ($e in (git -c core.quotePath=false ls-tree -r HEAD -- .github/IncrementalTest)) {
+          $tree = @(git -c core.quotePath=false ls-tree -r HEAD)
+          if ($LASTEXITCODE -ne 0) { throw 'Cannot read the checked-out commit tree.' }
+          $srcCheck = @(foreach ($e in $tree) {
             $meta, $path = $e -split "`t", 2
+            if (($meta -split ' ')[1] -ne 'blob') { throw "Submodule verification is not supported: $path" }
             $srcPaths += $path.Replace('/', '\')
             $blob = ($meta -split ' ')[2]
             $local = 'MISSING'
-            if (Test-Path -LiteralPath $path) { $local = (git hash-object -- $path).Trim() }
+            if (Test-Path -LiteralPath $path) {
+              $local = (git hash-object -- $path).Trim()
+              if ($LASTEXITCODE -ne 0) { throw "Cannot hash tracked file: $path" }
+            }
             [pscustomobject]@{ Path = $path; SourceBlob = $blob; DestinationBlob = $local; Match = ($blob -eq $local) }
           })
           $srcCheck | Export-Csv "$ev\source-vs-destination.csv" -NoTypeInformation
-          $obsolete = @()
-          if (Test-Path '.github\IncrementalTest') {
-            $obsolete = @(Get-ChildItem '.github\IncrementalTest' -Recurse -File -Force |
-              ForEach-Object { $_.FullName.Substring($env:TEST_DIR.Length + 1) } |
-              Where-Object { $srcPaths -notcontains $_ })
-          }
+          $obsolete = @($after | Where-Object { $srcPaths -notcontains $_.Path } | ForEach-Object Path)
           $status = @(git status --porcelain --untracked-files=all --ignored)
           $status | Set-Content "$ev\git-status.txt"
           Pop-Location
@@ -175,25 +168,24 @@ jobs:
           $kibAfter  = Get-ObjectStoreKiB $env:TEST_DIR
           $kibDelta  = $kibAfter - $kibBefore
 
-          # 4. Expected result per scenario
-          $expected = @{
-            '2' = @()
-            '3' = @("${t}FileA.ps1")
-            '4' = @("${t}FileB.ps1", "${t}FileC.ps1", "${t}FileD.ps1")
-            '5' = @("${t}NewFile.ps1")
-            '6' = @("${t}FileE.ps1")
-            '7' = @("${t}FileA.ps1", "${t}Moved\FileA_New.ps1")
-            '8' = @("${t}FileB.ps1")
-          }
+          # 4. Expected result = files that differ between the previous and the new commit (from Git, not hard-coded)
           $srcOk = (@($srcCheck | Where-Object { -not $_.Match }).Count -eq 0) -and ($obsolete.Count -eq 0) -and ($status.Count -eq 0)
+          $prevHead = (Get-Content "$ev\before-head.txt" | Select-Object -First 1).Trim()
           if ($env:SCENARIO -eq '1') {
-            $selOk = ($before.Count -eq 0) -and (@($rows | Where-Object Status -ne 'Added').Count -eq 0) -and ($after.Count -gt 0)
-            $expectedText = 'All files added to an empty destination'
+            $selOk = $true
+            $expectedText = if ($before.Count -eq 0) { 'Initial download into an empty workspace' } else { 'Existing workspace baseline; NOT a first-time-download test' }
+          } elseif ($prevHead -eq 'none') {
+            $selOk = $false
+            $expectedText = 'Previous repository is missing: restart with scenario 1'
           } else {
-            $exp = @($expected[$env:SCENARIO] | Sort-Object)
+            $diff = @(git -C $env:TEST_DIR -c core.quotePath=false diff --no-renames --name-only $prevHead HEAD)
+            if ($LASTEXITCODE -ne 0) { throw "Could not diff $prevHead..HEAD; no valid incremental verdict is possible." }
+            $exp = @($diff | Where-Object { $_ } | ForEach-Object { $_.Replace('/', '\') } | Sort-Object)
             $got = @($changed.Path | Sort-Object)
             $selOk = (($exp -join '|') -eq ($got -join '|'))
-            $expectedText = if ($exp.Count) { $exp -join ', ' } else { 'No files changed' }
+            $expectedText = if ($exp.Count) { "files changed in commits $($prevHead.Substring(0,7))..$($head.Substring(0,7)): " + ($exp -join ', ') } else { 'No files changed (same commit)' }
+            $md0 = @("Expected (from Git commit diff): $($exp -join ', ')", "Actually changed on SidePC: $($got -join ', ')")
+            $md0 | ForEach-Object { Write-Host $_ }
           }
           $verdict = if ($selOk -and $srcOk) { 'PASS' } else { 'FAIL' }
 
@@ -203,28 +195,30 @@ jobs:
           $md += "## Scenario $env:SCENARIO - $verdict"
           $md += ""
           $md += "Runner: $env:RUNNER_NAME ($env:COMPUTERNAME)  Commit: $head  Previous: $(Get-Content "$ev\before-head.txt")"
+          $md += "Workspace: $env:TEST_DIR (full repository checkout; Git internals excluded)"
+          $md += "Object-store size change is NOT a measurement of network bytes transferred. File hashes/timestamps describe disk state, not network traffic."
           $md += ""
-          $md += "| Files before | Files after | Added | Removed | Content changed | Rewritten, same content | Untouched | Git objects received (KiB) |"
+          $md += "| Files before | Files after | Added | Removed | Content changed | Rewritten, same content | Untouched | Git object-store size delta (KiB) |"
           $md += "|---|---|---|---|---|---|---|---|"
           $md += "| $($before.Count) | $($after.Count) | $(& $count 'Added') | $(& $count 'Removed') | $(& $count 'ContentChanged') | $(& $count 'RewrittenSameContent') | $(& $count 'Untouched') | $kibDelta |"
           $md += ""
           $md += "Expected changes: $expectedText"
           $md += ""
           $fmtTime = { param($ticks) if ($ticks) { ([datetime]::new([long]$ticks, 'Utc')).ToString('yyyy-MM-dd HH:mm:ss') + ' UTC' } }
-          $md += "### SidePC BEFORE run ($t)"
+          $md += "### SidePC BEFORE checkout (entire repository workspace)"
           $md += "| File | Size (bytes) | Last written | SHA-256 (first 12) |"
           $md += "|---|---|---|---|"
-          $bt = @($before | Where-Object { $_.Path.StartsWith($t) } | Sort-Object Path)
+          $bt = @($before | Sort-Object Path)
           if (-not $bt.Count) { $md += "| (empty - no files on SidePC) | | | |" }
-          foreach ($f in $bt) { $md += "| $($f.Path.Substring($t.Length)) | $($f.Size) | $(& $fmtTime $f.Modified) | $($f.SHA256.Substring(0,12)) |" }
+          foreach ($f in $bt) { $md += "| $($f.Path) | $($f.Size) | $(& $fmtTime $f.Modified) | $($f.SHA256.Substring(0,12)) |" }
           $md += ""
-          $md += "### SidePC AFTER run ($t)"
+          $md += "### SidePC AFTER checkout (entire repository workspace)"
           $md += "| File | Size (bytes) | Last written | SHA-256 (first 12) | Change made by this run |"
           $md += "|---|---|---|---|---|"
-          foreach ($r in ($rows | Where-Object { $_.Path.StartsWith($t) } | Sort-Object Path)) {
+          foreach ($r in ($rows | Sort-Object Path)) {
             $y = $a[$r.Path]
-            if ($y) { $md += "| $($r.Path.Substring($t.Length)) | $($y.Size) | $(& $fmtTime $y.Modified) | $($y.SHA256.Substring(0,12)) | $($r.Status) |" }
-            else    { $md += "| ~~$($r.Path.Substring($t.Length))~~ | - | - | - | Removed |" }
+            if ($y) { $md += "| $($r.Path) | $($y.Size) | $(& $fmtTime $y.Modified) | $($y.SHA256.Substring(0,12)) | $($r.Status) |" }
+            else    { $md += "| ~~$($r.Path)~~ | - | - | - | Removed |" }
           }
           $md += ""
           if ($env:SCENARIO -ne '1' -or $changed.Count -le 50) {
@@ -233,8 +227,8 @@ jobs:
             foreach ($r in $changed) { $md += "| $($r.Path) | $($r.Status) | $($r.SizeBefore) | $($r.SizeAfter) |" }
             $md += ""
           }
-          $md += "Source vs destination (test folder): $(@($srcCheck | Where-Object Match).Count)/$($srcCheck.Count) Git blob hashes match"
-          $md += "Obsolete files left in the test folder: $($obsolete.Count) $($obsolete -join ', ')"
+          $md += "Source vs destination (entire repository): $(@($srcCheck | Where-Object Match).Count)/$($srcCheck.Count) Git blob hashes match"
+          $md += "Extra workspace files not in the commit: $($obsolete.Count) $($obsolete -join ', ')"
           $md += "git status (modified/untracked/ignored): $($status.Count) entries"
           $md | Set-Content "$ev\summary.md"
           $md | Add-Content -Path $env:GITHUB_STEP_SUMMARY -Encoding ascii
