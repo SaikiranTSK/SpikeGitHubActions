@@ -15,7 +15,7 @@ on:
       runner:
         description: SidePC runner label
         required: true
-        default: VTP01_BLR
+        default: vtest-client-test
       scenario:
         description: Scenario (1 = empty destination first)
         required: true
@@ -78,8 +78,11 @@ jobs:
             Write-Host "::warning::Git is not on PATH. actions/checkout will use the REST API (full download every run)."
           } else {
             git --version
-            Write-Host "core.autocrlf = $(git config --global core.autocrlf)"
+            $crlf = git config --global core.autocrlf
+            if (-not $crlf) { $crlf = '(not set)' }
+            Write-Host "core.autocrlf = $crlf"
           }
+          exit 0
 
       - name: Scenario 1 - empty the destination
         if: inputs.scenario == '1'
@@ -102,6 +105,7 @@ jobs:
           }
           Write-Host "Destination: $env:TEST_DIR"
           Write-Host "Files before checkout: $($before.Count)"
+          exit 0
 
       - name: Checkout (mechanism under test)
         uses: actions/checkout@v4
