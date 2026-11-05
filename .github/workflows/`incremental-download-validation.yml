@@ -24,7 +24,7 @@ on:
       test_ref:
         description: Branch containing the test files
         required: true
-        default: incremental-download-test
+        default: main
 
 concurrency:
   group: incremental-download-${{ inputs.runner }}
