@@ -16,7 +16,7 @@ on:
       runner:
         description: SidePC runner label
         required: true
-        default: vtest-client-test
+        default: Bhargava_BLR
       scenario:
         description: Scenario (1 = baseline; workspace is not emptied)
         required: true
@@ -25,7 +25,7 @@ on:
       test_ref:
         description: Branch containing the test files
         required: true
-        default: incremental-download-test
+        default: main
 
 concurrency:
   group: incremental-download-${{ inputs.runner }}
