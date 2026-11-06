@@ -165,7 +165,7 @@ jobs:
       # Hard cutover: fetch .github once and execute in place; no DataPath tooling copy.
       # Sparse, depth 1, token not saved on the PC.
       - name: Get pipeline scripts
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
           sparse-checkout: .github
           
