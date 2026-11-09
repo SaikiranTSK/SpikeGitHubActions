@@ -4,7 +4,6 @@
 #
 # Schedules (start times in each schedule's own time zone):
 #   - Mainline Team Tests on Bhargava_BLR: once on 2026-11-08 at 19:15 Europe/Amsterdam time, MainlineTeamTests.yml on main
-#   - Mainline Team Tests on VTP01_BLR: once on 2026-11-10 at 00:00 Asia/Kolkata time, MainlineTeamTests.yml on main
 #   - Mainline Team Tests on AntonMauve-VTM: once on 2026-11-10 at 16:00 Asia/Kolkata time, MainlineTeamTests.yml on main
 
 name: Scheduled tests
@@ -12,9 +11,7 @@ name: Scheduled tests
 on:
   schedule:
     - cron: '10 11 10 11 *'
-    - cron: '10 19 9 11 *'
     - cron: '30,45 10 10 11 *'
-    - cron: '30,45 18 9 11 *'
   workflow_dispatch:
 
 permissions:
@@ -29,7 +26,6 @@ env:
   SCHEDULES: |
     [
     {"id":"krlb8c","name":"Mainline Team Tests on Bhargava_BLR","workflow":"MainlineTeamTests.yml","ref":"main","inputs":{"SystemName":"Bhargava_BLR","Branch":"master","UseInstalledPDC":"false","JobName":"AcquisitionMain","RunAllJobs":"false","AllJobs":"AcquisitionMain,PerformanceMain,GeoMain,FlexibleViewingMain,ViewingMain,ServiceWorkflowBatch01_Main,ServiceWorkflowBatch02_Main,ServiceWorkflowBatch03_Main,ReliabilityMain","TestCategories":"","TEST_END_TIME":"","RestoreName":"","RestoreFromLocation":"\\\\code1.emi.philips.com\\storage\\SDI_Publish\\TestSystems\\Backups"},"repeat":"once","date":"2026-11-08","time":"19:15","paused":false,"since":"2026-11-08T18:09:49+00:00","createdBy":"Raja","updatedBy":"Raja","updatedAt":"2026-11-08T18:09:49+00:00"},
-    {"id":"gf1rkr","name":"Mainline Team Tests on VTP01_BLR","workflow":"MainlineTeamTests.yml","ref":"main","inputs":{"SystemName":"VTP01_BLR","Branch":"master","UseInstalledPDC":"true","JobName":"AcquisitionMain","RunAllJobs":"false","AllJobs":"AcquisitionMain,PerformanceMain,GeoMain,FlexibleViewingMain,ViewingMain,ServiceWorkflowBatch01_Main,ServiceWorkflowBatch02_Main,ServiceWorkflowBatch03_Main,ReliabilityMain","TestCategories":"","TEST_END_TIME":"","RestoreName":"","RestoreFromLocation":"\\\\code1.emi.philips.com\\storage\\SDI_Publish\\TestSystems\\Backups"},"repeat":"once","date":"2026-11-10","time":"00:00","zone":"Asia/Kolkata","paused":false,"since":"2026-11-09T06:31:01+00:00","createdBy":"Raja","updatedBy":"Raja","updatedAt":"2026-11-09T06:31:01+00:00"},
     {"id":"tohhyt","name":"Mainline Team Tests on AntonMauve-VTM","workflow":"MainlineTeamTests.yml","ref":"main","inputs":{"SystemName":"AntonMauve-VTM","Branch":"master","UseInstalledPDC":"false","JobName":"AcquisitionMain","RunAllJobs":"false","AllJobs":"AcquisitionMain,PerformanceMain,GeoMain,FlexibleViewingMain,ViewingMain,ServiceWorkflowBatch01_Main,ServiceWorkflowBatch02_Main,ServiceWorkflowBatch03_Main,ReliabilityMain","TestCategories":"","TEST_END_TIME":"","RestoreName":"","RestoreFromLocation":"\\\\code1.emi.philips.com\\storage\\SDI_Publish\\TestSystems\\Backups"},"repeat":"once","date":"2026-11-10","time":"16:00","zone":"Asia/Kolkata","paused":false,"since":"2026-11-09T06:32:04+00:00","createdBy":"Raja","updatedBy":"Raja","updatedAt":"2026-11-09T06:32:04+00:00"}
     ]
 
