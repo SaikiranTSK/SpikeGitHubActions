@@ -2,14 +2,16 @@
 # GitHub wakes this workflow at the cron times below (UTC). It starts each schedule that is due, once.
 # A start that is more than 2 hours late is skipped and shown as missed in the app.
 #
-# Schedules (Amsterdam time):
-#   - Mainline Team Tests on Bhargava_BLR: once on 2026-11-08 at 19:15, MainlineTeamTests.yml on main
+# Schedules (start times in each schedule's own time zone):
+#   - Mainline Team Tests on Bhargava_BLR: once on 2026-11-08 at 19:15 Europe/Amsterdam time, MainlineTeamTests.yml on main
+#   - Mainline Team Tests on Bhargava_BLR: once on 2026-11-09 at 12:00 Asia/Kolkata time, MainlineTeamTests.yml on main
 
 name: Scheduled tests
 
 on:
   schedule:
-    - cron: '15,30,55 18 8 11 *'
+    - cron: '10 7 9 11 *'
+    - cron: '30,45 6 9 11 *'
   workflow_dispatch:
 
 permissions:
@@ -23,7 +25,8 @@ concurrency:
 env:
   SCHEDULES: |
     [
-    {"id":"krlb8c","name":"Mainline Team Tests on Bhargava_BLR","workflow":"MainlineTeamTests.yml","ref":"main","inputs":{"SystemName":"Bhargava_BLR","Branch":"master","UseInstalledPDC":"false","JobName":"AcquisitionMain","RunAllJobs":"false","AllJobs":"AcquisitionMain,PerformanceMain,GeoMain,FlexibleViewingMain,ViewingMain,ServiceWorkflowBatch01_Main,ServiceWorkflowBatch02_Main,ServiceWorkflowBatch03_Main,ReliabilityMain","TestCategories":"","TEST_END_TIME":"","RestoreName":"","RestoreFromLocation":"\\\\code1.emi.philips.com\\storage\\SDI_Publish\\TestSystems\\Backups"},"repeat":"once","date":"2026-11-08","time":"19:15","paused":false,"since":"2026-11-08T18:09:49+00:00","createdBy":"Raja","updatedBy":"Raja","updatedAt":"2026-11-08T18:09:49+00:00"}
+    {"id":"krlb8c","name":"Mainline Team Tests on Bhargava_BLR","workflow":"MainlineTeamTests.yml","ref":"main","inputs":{"SystemName":"Bhargava_BLR","Branch":"master","UseInstalledPDC":"false","JobName":"AcquisitionMain","RunAllJobs":"false","AllJobs":"AcquisitionMain,PerformanceMain,GeoMain,FlexibleViewingMain,ViewingMain,ServiceWorkflowBatch01_Main,ServiceWorkflowBatch02_Main,ServiceWorkflowBatch03_Main,ReliabilityMain","TestCategories":"","TEST_END_TIME":"","RestoreName":"","RestoreFromLocation":"\\\\code1.emi.philips.com\\storage\\SDI_Publish\\TestSystems\\Backups"},"repeat":"once","date":"2026-11-08","time":"19:15","paused":false,"since":"2026-11-08T18:09:49+00:00","createdBy":"Raja","updatedBy":"Raja","updatedAt":"2026-11-08T18:09:49+00:00"},
+    {"id":"ejyn84","name":"Mainline Team Tests on Bhargava_BLR","workflow":"MainlineTeamTests.yml","ref":"main","inputs":{"SystemName":"Bhargava_BLR","Branch":"master","UseInstalledPDC":"false","JobName":"AcquisitionMain","RunAllJobs":"false","AllJobs":"AcquisitionMain,PerformanceMain,GeoMain,FlexibleViewingMain,ViewingMain,ServiceWorkflowBatch01_Main,ServiceWorkflowBatch02_Main,ServiceWorkflowBatch03_Main,ReliabilityMain","TestCategories":"","TEST_END_TIME":"","RestoreName":"","RestoreFromLocation":"\\\\code1.emi.philips.com\\storage\\SDI_Publish\\TestSystems\\Backups"},"repeat":"once","date":"2026-11-09","time":"12:00","zone":"Asia/Kolkata","paused":false,"since":"2026-11-09T05:29:29+00:00","createdBy":"Raja","updatedBy":"Raja","updatedAt":"2026-11-09T05:29:29+00:00"}
     ]
 
 jobs:
@@ -41,9 +44,8 @@ jobs:
         run: |
           import json, os, re, urllib.parse, urllib.request
           from datetime import datetime, timedelta, timezone
-          from zoneinfo import ZoneInfo
-
-          AMS = ZoneInfo("Europe/Amsterdam")
+          from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
+          AMS = "Europe/Amsterdam"
           GRACE = timedelta(hours=2)
           DAYS = ["mon", "tue", "wed", "thu", "fri", "sat", "sun"]
           KEY = re.compile(r"\[([a-z0-9]+@[0-9T:-]+)\]$")
@@ -68,23 +70,31 @@ jobs:
                   return json.load(res)
 
 
-          def to_utc(local):
+          def zone_of(s):
+              # Date and time are in the time zone of the person who saved the schedule. Older schedules: Amsterdam.
+              try:
+                  return ZoneInfo(s.get("zone") or AMS)
+              except (ZoneInfoNotFoundError, ValueError, OSError):
+                  return None
+
+
+          def to_utc(local, tz):
               # A time skipped when the clocks go forward does not exist. A time that happens twice
               # when the clocks go back uses the second one (winter time), like the app.
-              utc = local.replace(tzinfo=AMS, fold=1).astimezone(timezone.utc)
-              return utc if utc.astimezone(AMS).replace(tzinfo=None) == local else None
+              utc = local.replace(tzinfo=tz, fold=1).astimezone(timezone.utc)
+              return utc if utc.astimezone(tz).replace(tzinfo=None) == local else None
 
 
-          def starts(s, lo, hi):
+          def starts(s, tz, lo, hi):
               hour, minute = map(int, s["time"].split(":"))
               since = parse_time(s["since"])
-              day = lo.astimezone(AMS).date() - timedelta(days=1)
-              last = hi.astimezone(AMS).date() + timedelta(days=1)
+              day = lo.astimezone(tz).date() - timedelta(days=1)
+              last = hi.astimezone(tz).date() + timedelta(days=1)
               while day <= last:
                   if (s["repeat"] == "once" and day.isoformat() == s.get("date")) or (
                           s["repeat"] == "weekly" and DAYS[day.weekday()] in (s.get("days") or [])):
                       local = datetime(day.year, day.month, day.day, hour, minute)
-                      due = to_utc(local)
+                      due = to_utc(local, tz)
                       if due and lo <= due <= hi and due > since:
                           yield local, due
                   day += timedelta(days=1)
@@ -119,7 +129,11 @@ jobs:
           for s in json.loads(os.environ["SCHEDULES"]):
               if s.get("paused"):
                   continue
-              for local, at in starts(s, NOW - GRACE, NOW):
+              tz = zone_of(s)
+              if tz is None:
+                  print(f"::warning title=Unknown time zone::{s['name'][:40]}: {s.get('zone')}")
+                  continue
+              for local, at in starts(s, tz, NOW - GRACE, NOW):
                   key = f"{s['id']}@{local:%Y-%m-%dT%H:%M}"
                   due.append((at, {
                       "key": key,
