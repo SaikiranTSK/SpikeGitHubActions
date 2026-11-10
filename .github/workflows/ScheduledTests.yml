@@ -4,10 +4,13 @@
 #
 # Schedules (start times in each schedule's own time zone):
 #   - Mainline Team Tests on Bhargava_BLR: once on 2026-11-08 at 19:15 Europe/Amsterdam time, MainlineTeamTests.yml on main
+#   - Mainline Team Tests on AntonMauve-VTM: once on 2026-11-10 at 18:46 Asia/Kolkata time, MainlineTeamTests.yml on main
 
 name: Scheduled tests
 
 on:
+  schedule:
+    - cron: '16,31,56 13 10 11 *'
   workflow_dispatch:
 
 permissions:
@@ -21,7 +24,8 @@ concurrency:
 env:
   SCHEDULES: |
     [
-    {"id":"krlb8c","name":"Mainline Team Tests on Bhargava_BLR","workflow":"MainlineTeamTests.yml","ref":"main","inputs":{"SystemName":"Bhargava_BLR","Branch":"master","UseInstalledPDC":"false","JobName":"AcquisitionMain","RunAllJobs":"false","AllJobs":"AcquisitionMain,PerformanceMain,GeoMain,FlexibleViewingMain,ViewingMain,ServiceWorkflowBatch01_Main,ServiceWorkflowBatch02_Main,ServiceWorkflowBatch03_Main,ReliabilityMain","TestCategories":"","TEST_END_TIME":"","RestoreName":"","RestoreFromLocation":"\\\\code1.emi.philips.com\\storage\\SDI_Publish\\TestSystems\\Backups"},"repeat":"once","date":"2026-11-08","time":"19:15","paused":false,"since":"2026-11-08T18:09:49+00:00","createdBy":"Raja","updatedBy":"Raja","updatedAt":"2026-11-08T18:09:49+00:00"}
+    {"id":"krlb8c","name":"Mainline Team Tests on Bhargava_BLR","workflow":"MainlineTeamTests.yml","ref":"main","inputs":{"SystemName":"Bhargava_BLR","Branch":"master","UseInstalledPDC":"false","JobName":"AcquisitionMain","RunAllJobs":"false","AllJobs":"AcquisitionMain,PerformanceMain,GeoMain,FlexibleViewingMain,ViewingMain,ServiceWorkflowBatch01_Main,ServiceWorkflowBatch02_Main,ServiceWorkflowBatch03_Main,ReliabilityMain","TestCategories":"","TEST_END_TIME":"","RestoreName":"","RestoreFromLocation":"\\\\code1.emi.philips.com\\storage\\SDI_Publish\\TestSystems\\Backups"},"repeat":"once","date":"2026-11-08","time":"19:15","paused":false,"since":"2026-11-08T18:09:49+00:00","createdBy":"Raja","updatedBy":"Raja","updatedAt":"2026-11-08T18:09:49+00:00"},
+    {"id":"h6gpcr","name":"Mainline Team Tests on AntonMauve-VTM","workflow":"MainlineTeamTests.yml","ref":"main","inputs":{"SystemName":"AntonMauve-VTM","Branch":"master","UseInstalledPDC":"true","JobName":"AcceptanceTesting","RunAllJobs":"false","AllJobs":"AcquisitionMain,PerformanceMain,GeoMain,FlexibleViewingMain,ViewingMain,ServiceWorkflowBatch01_Main,ServiceWorkflowBatch02_Main,ServiceWorkflowBatch03_Main,ReliabilityMain","TestCategories":"","TEST_END_TIME":"2026-11-11 00:20","RestoreName":"","RestoreFromLocation":"\\\\code1.emi.philips.com\\storage\\SDI_Publish\\TestSystems\\Backups"},"repeat":"once","date":"2026-11-10","time":"18:46","zone":"Asia/Kolkata","paused":false,"since":"2026-11-10T13:12:10+00:00","createdBy":"Raja","updatedBy":"Raja","updatedAt":"2026-11-10T13:12:10+00:00"}
     ]
 
 jobs:
@@ -65,6 +69,18 @@ jobs:
                   return json.load(res)
 
 
+          def items(path, field):
+              page = 1
+              separator = "&" if "?" in path else "?"
+              while True:
+                  data = get(f"{path}{separator}per_page=100&page={page}")
+                  batch = data[field]
+                  yield from batch
+                  if len(batch) < 100:
+                      return
+                  page += 1
+
+
           def zone_of(s):
               # Date and time are in the time zone of the person who saved the schedule. Older schedules: Amsterdam.
               try:
@@ -106,17 +122,22 @@ jobs:
               return inputs
 
 
-          def already_started(since):
+          def already_started(since, wanted):
               keys = set()
-              created = urllib.parse.quote(">=" + since.strftime("%Y-%m-%dT%H:%M:%SZ"))
-              runs = get(f"/repos/{REPO}/actions/workflows/ScheduledTests.yml/runs?per_page=100&created={created}")
-              for run in runs["workflow_runs"]:
+              # A dispatcher can be created long before it starts a due occurrence.
+              # Filter by its last update, not creation time, and page through all runs.
+              path = f"/repos/{REPO}/actions/workflows/ScheduledTests.yml/runs"
+              for run in items(path, "workflow_runs"):
                   if str(run["id"]) == os.environ.get("GITHUB_RUN_ID"):
                       continue
-                  for job in get(f"/repos/{REPO}/actions/runs/{run['id']}/jobs?filter=all&per_page=100")["jobs"]:
+                  if parse_time(run["updated_at"]) < since:
+                      continue
+                  for job in items(f"/repos/{REPO}/actions/runs/{run['id']}/jobs?filter=all", "jobs"):
                       match = KEY.search(job.get("name") or "")
-                      if match and job.get("conclusion") == "success":
+                      if match and match.group(1) in wanted and job.get("conclusion") == "success":
                           keys.add(match.group(1))
+                  if wanted <= keys:
+                      break
               return keys
 
 
@@ -139,7 +160,7 @@ jobs:
                   }))
           due.sort(key=lambda d: d[0])
 
-          done = already_started(due[0][0] - timedelta(minutes=5)) if due else set()
+          done = already_started(due[0][0], {item["key"] for _, item in due}) if due else set()
           todo = [item for _, item in due if item["key"] not in done][:100]
           print(f"Now: {NOW:%Y-%m-%d %H:%M} UTC")
           for _, item in due:
