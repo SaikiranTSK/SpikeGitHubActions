@@ -4,7 +4,7 @@ run-name: AntonMauve-VTM - AcceptanceTesting
 on:
   workflow_dispatch:
   schedule:
-    # 20:08 UTC = 21:08 Netherlands time = 01:38 India time (12 Nov).
+    # 20:08 UTC on 11 Nov = 21:08 Netherlands time = 01:38 India time (12 Nov).
     # 20 minutes after RestartSidePCOnAntonMauve (19:48 UTC).
     - cron: '8 20 11 11 *'
 
@@ -12,27 +12,8 @@ permissions:
   contents: read
 
 jobs:
-  schedule-guard:
-    runs-on: ubuntu-latest
-    permissions: {}
-    outputs:
-      should_run: ${{ steps.check.outputs.should_run }}
-    steps:
-      - name: Check scheduled date
-        id: check
-        shell: bash
-        run: |
-          if [[ "$GITHUB_EVENT_NAME" != "schedule" ]] ||
-             [[ "$(TZ=Europe/Amsterdam date +%F)" == "2026-11-11" ]]; then
-            echo "should_run=true" >> "$GITHUB_OUTPUT"
-          else
-            echo "should_run=false" >> "$GITHUB_OUTPUT"
-          fi
-
   run-tests:
     name: Acceptance tests on AntonMauve-VTM
-    needs: schedule-guard
-    if: ${{ needs.schedule-guard.outputs.should_run == 'true' }}
     uses: ./.github/workflows/MainlineTeamTests.yml
     with:
       SystemName: AntonMauve-VTM
