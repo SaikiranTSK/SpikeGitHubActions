@@ -108,7 +108,7 @@ jobs:
           Add-Content -Path $env:GITHUB_STEP_SUMMARY -Encoding ascii -Value "| $s | $e | $dur | $lateMs |"
 
       - name: Upload timing
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: timing-${{ matrix.runner }}
           path: timing-${{ matrix.runner }}.json
