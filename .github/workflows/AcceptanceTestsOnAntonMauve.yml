@@ -39,5 +39,5 @@ jobs:
       Branch: master
       JobName: AcceptanceTesting
       RunAllJobs: false
-      UseInstalledPDC: true
+      UseInstalledPDC: false
     secrets: inherit
