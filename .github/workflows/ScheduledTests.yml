@@ -3,14 +3,11 @@
 # A start that is more than 2 hours late is skipped and shown as missed in the app.
 #
 # Schedules (start times in each schedule's own time zone):
-#   - Mainline Team Tests on Kratu_BLR: once on 2026-11-12 at 00:00 Asia/Kolkata time, MainlineTeamTests.yml on main
+#   none
 
 name: Scheduled tests
 
 on:
-  schedule:
-    - cron: '10 19 11 11 *'
-    - cron: '30,45 18 11 11 *'
   workflow_dispatch:
 
 permissions:
@@ -23,9 +20,7 @@ concurrency:
 
 env:
   SCHEDULES: |
-    [
-    {"id":"k7ngck","name":"Mainline Team Tests on Kratu_BLR","workflow":"MainlineTeamTests.yml","ref":"main","inputs":{"SystemName":"Kratu_BLR","Branch":"master","UseInstalledPDC":"false","JobName":"AcquisitionMain","RunAllJobs":"false","AllJobs":"AcquisitionMain,PerformanceMain,GeoMain,FlexibleViewingMain,ViewingMain,ServiceWorkflowBatch01_Main,ServiceWorkflowBatch02_Main,ServiceWorkflowBatch03_Main,ReliabilityMain","TestCategories":"","TEST_END_TIME":"","RestoreName":"","RestoreFromLocation":"\\\\code1.emi.philips.com\\storage\\SDI_Publish\\TestSystems\\Backups"},"repeat":"once","date":"2026-11-12","time":"00:00","zone":"Asia/Kolkata","paused":false,"since":"2026-11-11T08:44:38+00:00","createdBy":"Raja","updatedBy":"Raja","updatedAt":"2026-11-11T08:44:38+00:00"}
-    ]
+    []
 
 jobs:
   plan:
