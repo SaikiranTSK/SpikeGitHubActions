@@ -4,9 +4,14 @@ run-name: AntonMauve-VTM - AcceptanceTesting
 on:
   workflow_dispatch:
   schedule:
-    # 20:08 UTC on 11 Nov = 21:08 Netherlands time = 01:38 India time (12 Nov).
-    # 20 minutes after RestartSidePCOnAntonMauve (19:48 UTC).
+    # 3 runs, 2.5 hours apart. The first is 20 minutes after RestartSidePCOnAntonMauve (19:48 UTC).
+    #   UTC             Netherlands     India
+    #   20:08 (11 Nov)  21:08 (11 Nov)  01:38 (12 Nov)
+    #   22:38 (11 Nov)  23:38 (11 Nov)  04:08 (12 Nov)
+    #   01:08 (12 Nov)  02:08 (12 Nov)  06:38 (12 Nov)
     - cron: '8 20 11 11 *'
+    - cron: '38 22 11 11 *'
+    - cron: '8 1 12 11 *'
 
 permissions:
   contents: read
