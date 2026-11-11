@@ -9,7 +9,14 @@ on:
       SystemName:
         description: Side PC (runner name / label)
         required: true
-        type: string
+        type: choice
+        options:
+          - AntonMauve-VTM
+          - VTP01_BLR
+          - JacobVanCampen-VTM
+          - Kratu_BLR
+          - Kanva_BLR
+          - Bhargava_BLR
       Branch:
         description: Exact name of the folder that can be found here:\\code1.emi.philips.com\storage\IGTS_WIP_Storage\CIBuilds\TestTooling
         required: true
