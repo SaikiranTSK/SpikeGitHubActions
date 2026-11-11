@@ -5,13 +5,17 @@
 # Schedules (start times in each schedule's own time zone):
 #   - Mainline Team Tests on AntonMauve-VTM: once on 2026-11-11 at 23:45 Asia/Kolkata time, MainlineTeamTests.yml on main
 #   - Mainline Team Tests on Kratu_BLR: once on 2026-11-12 at 00:00 Asia/Kolkata time, MainlineTeamTests.yml on main
+#   - Mainline Team Tests on AntonMauve-VTM: once on 2026-11-11 at 21:10 Asia/Kolkata time, MainlineTeamTests.yml on main
 
 name: Scheduled tests
 
 on:
   schedule:
     - cron: '10 19 11 11 *'
-    - cron: '15,30,45,55 18 11 11 *'
+    - cron: '15,30,45 18 11 11 *'
+    - cron: '20 16 11 11 *'
+    - cron: '40 15 11 11 *'
+    - cron: '55 15,18 11 11 *'
   workflow_dispatch:
 
 permissions:
@@ -26,7 +30,8 @@ env:
   SCHEDULES: |
     [
     {"id":"ek1m98","name":"Mainline Team Tests on AntonMauve-VTM","workflow":"MainlineTeamTests.yml","ref":"main","inputs":{"SystemName":"AntonMauve-VTM","Branch":"master","UseInstalledPDC":"false","JobName":"AcquisitionMain","RunAllJobs":"false","AllJobs":"AcquisitionMain,PerformanceMain,GeoMain,FlexibleViewingMain,ViewingMain,ServiceWorkflowBatch01_Main,ServiceWorkflowBatch02_Main,ServiceWorkflowBatch03_Main,ReliabilityMain","TestCategories":"","TEST_END_TIME":"","RestoreName":"","RestoreFromLocation":"\\\\code1.emi.philips.com\\storage\\SDI_Publish\\TestSystems\\Backups"},"repeat":"once","date":"2026-11-11","time":"23:45","zone":"Asia/Kolkata","paused":false,"since":"2026-11-11T08:41:20+00:00","createdBy":"Raja","updatedBy":"Raja","updatedAt":"2026-11-11T08:41:20+00:00"},
-    {"id":"k7ngck","name":"Mainline Team Tests on Kratu_BLR","workflow":"MainlineTeamTests.yml","ref":"main","inputs":{"SystemName":"Kratu_BLR","Branch":"master","UseInstalledPDC":"false","JobName":"AcquisitionMain","RunAllJobs":"false","AllJobs":"AcquisitionMain,PerformanceMain,GeoMain,FlexibleViewingMain,ViewingMain,ServiceWorkflowBatch01_Main,ServiceWorkflowBatch02_Main,ServiceWorkflowBatch03_Main,ReliabilityMain","TestCategories":"","TEST_END_TIME":"","RestoreName":"","RestoreFromLocation":"\\\\code1.emi.philips.com\\storage\\SDI_Publish\\TestSystems\\Backups"},"repeat":"once","date":"2026-11-12","time":"00:00","zone":"Asia/Kolkata","paused":false,"since":"2026-11-11T08:44:38+00:00","createdBy":"Raja","updatedBy":"Raja","updatedAt":"2026-11-11T08:44:38+00:00"}
+    {"id":"k7ngck","name":"Mainline Team Tests on Kratu_BLR","workflow":"MainlineTeamTests.yml","ref":"main","inputs":{"SystemName":"Kratu_BLR","Branch":"master","UseInstalledPDC":"false","JobName":"AcquisitionMain","RunAllJobs":"false","AllJobs":"AcquisitionMain,PerformanceMain,GeoMain,FlexibleViewingMain,ViewingMain,ServiceWorkflowBatch01_Main,ServiceWorkflowBatch02_Main,ServiceWorkflowBatch03_Main,ReliabilityMain","TestCategories":"","TEST_END_TIME":"","RestoreName":"","RestoreFromLocation":"\\\\code1.emi.philips.com\\storage\\SDI_Publish\\TestSystems\\Backups"},"repeat":"once","date":"2026-11-12","time":"00:00","zone":"Asia/Kolkata","paused":false,"since":"2026-11-11T08:44:38+00:00","createdBy":"Raja","updatedBy":"Raja","updatedAt":"2026-11-11T08:44:38+00:00"},
+    {"id":"qte3vm","name":"Mainline Team Tests on AntonMauve-VTM","workflow":"MainlineTeamTests.yml","ref":"main","inputs":{"SystemName":"AntonMauve-VTM","Branch":"master","UseInstalledPDC":"true","JobName":"AcquisitionMain","RunAllJobs":"true","AllJobs":"FlexibleViewingMain,ViewingMain,ServiceWorkflowBatch01_Main,ServiceWorkflowBatch02_Main,ServiceWorkflowBatch03_Main,ReliabilityMain,HospitalWorkflowMasterBatch01_Main,LicensesMain","TestCategories":"","TEST_END_TIME":"","RestoreName":"","RestoreFromLocation":"\\\\code1.emi.philips.com\\storage\\SDI_Publish\\TestSystems\\Backups"},"repeat":"once","date":"2026-11-11","time":"21:10","zone":"Asia/Kolkata","paused":false,"since":"2026-11-11T11:16:06+00:00","createdBy":"Raja","updatedBy":"Raja","updatedAt":"2026-11-11T11:16:06+00:00"}
     ]
 
 jobs:
@@ -38,6 +43,7 @@ jobs:
       due: ${{ steps.plan.outputs.due }}
     steps:
       - id: plan
+        name: Find due schedules
         env:
           GH_TOKEN: ${{ github.token }}
         shell: python3 {0}
@@ -182,7 +188,8 @@ jobs:
       matrix:
         item: ${{ fromJSON(needs.plan.outputs.due) }}
     steps:
-      - env:
+      - name: Start the workflow
+        env:
           GH_TOKEN: ${{ github.token }}
           ITEM: ${{ toJSON(matrix.item) }}
         shell: python3 {0}
