@@ -3,14 +3,13 @@
 # A start that is more than 2 hours late is skipped and shown as missed in the app.
 #
 # Schedules (start times in each schedule's own time zone):
-#   - Mainline Team Tests on AntonMauve-VTM: once on 2026-11-10 at 22:50 Asia/Kolkata time, MainlineTeamTests.yml on main
+#   - Mainline Team Tests on AntonMauve-VTM: once on 2026-11-11 at 23:45 Asia/Kolkata time, MainlineTeamTests.yml on main
 
 name: Scheduled tests
 
 on:
   schedule:
-    - cron: '0 18 10 11 *'
-    - cron: '20,35 17 10 11 *'
+    - cron: '15,30,55 18 11 11 *'
   workflow_dispatch:
 
 permissions:
@@ -24,7 +23,7 @@ concurrency:
 env:
   SCHEDULES: |
     [
-    {"id":"bi2j3j","name":"Mainline Team Tests on AntonMauve-VTM","workflow":"MainlineTeamTests.yml","ref":"main","inputs":{"SystemName":"AntonMauve-VTM","Branch":"master","UseInstalledPDC":"false","JobName":"AcceptanceTesting","RunAllJobs":"false","AllJobs":"AcquisitionMain,PerformanceMain,GeoMain,FlexibleViewingMain,ViewingMain,ServiceWorkflowBatch01_Main,ServiceWorkflowBatch02_Main,ServiceWorkflowBatch03_Main,ReliabilityMain","TestCategories":"","TEST_END_TIME":"2026-11-11 20:15","RestoreName":"","RestoreFromLocation":"\\\\code1.emi.philips.com\\storage\\SDI_Publish\\TestSystems\\Backups"},"repeat":"once","date":"2026-11-10","time":"22:50","zone":"Asia/Kolkata","paused":false,"since":"2026-11-10T17:18:35+00:00","createdBy":"Raja","updatedBy":"Raja","updatedAt":"2026-11-10T17:18:35+00:00"}
+    {"id":"ek1m98","name":"Mainline Team Tests on AntonMauve-VTM","workflow":"MainlineTeamTests.yml","ref":"main","inputs":{"SystemName":"AntonMauve-VTM","Branch":"master","UseInstalledPDC":"false","JobName":"AcquisitionMain","RunAllJobs":"false","AllJobs":"AcquisitionMain,PerformanceMain,GeoMain,FlexibleViewingMain,ViewingMain,ServiceWorkflowBatch01_Main,ServiceWorkflowBatch02_Main,ServiceWorkflowBatch03_Main,ReliabilityMain","TestCategories":"","TEST_END_TIME":"","RestoreName":"","RestoreFromLocation":"\\\\code1.emi.philips.com\\storage\\SDI_Publish\\TestSystems\\Backups"},"repeat":"once","date":"2026-11-11","time":"23:45","zone":"Asia/Kolkata","paused":false,"since":"2026-11-11T08:41:20+00:00","createdBy":"Raja","updatedBy":"Raja","updatedAt":"2026-11-11T08:41:20+00:00"}
     ]
 
 jobs:
