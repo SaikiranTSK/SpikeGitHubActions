@@ -77,7 +77,7 @@ jobs:
       BATCH: ${{ inputs.Batch }}
     steps:
       - name: Get pipeline scripts
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
           sparse-checkout: .github
 

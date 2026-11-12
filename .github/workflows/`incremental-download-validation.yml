@@ -103,7 +103,7 @@ jobs:
           exit 0
 
       - name: Checkout (mechanism under test)
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
           ref: ${{ inputs.test_ref }}
           fetch-depth: 1
