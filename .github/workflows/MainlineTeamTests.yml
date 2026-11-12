@@ -12,7 +12,6 @@ on:
         type: choice
         options:
           - AntonMauve-VTM
-          - VTP01_BLR
           - JacobVanCampen-VTM
           - Kratu_BLR
           - Kanva_BLR
