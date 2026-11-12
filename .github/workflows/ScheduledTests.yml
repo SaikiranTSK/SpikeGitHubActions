@@ -3,11 +3,14 @@
 # A start that is more than 2 hours late is skipped and shown as missed in the app.
 #
 # Schedules (start times in each schedule's own time zone):
-#   none
+#   - Mainline Team Tests on AntonMauve-VTM: once on 2026-11-15 at 00:00 Asia/Kolkata time, MainlineTeamTests.yml on main
 
 name: Scheduled tests
 
 on:
+  schedule:
+    - cron: '10 19 14 11 *'
+    - cron: '30,45 18 14 11 *'
   workflow_dispatch:
 
 permissions:
@@ -20,7 +23,9 @@ concurrency:
 
 env:
   SCHEDULES: |
-    []
+    [
+    {"id":"sp40co","name":"Mainline Team Tests on AntonMauve-VTM","workflow":"MainlineTeamTests.yml","ref":"main","inputs":{"SystemName":"AntonMauve-VTM","Branch":"master","UseInstalledPDC":"false","JobName":"AcquisitionMain","RunAllJobs":"false","AllJobs":"AcquisitionMain,PerformanceMain,GeoMain,FlexibleViewingMain,ViewingMain,ServiceWorkflowBatch01_Main,ServiceWorkflowBatch02_Main,ServiceWorkflowBatch03_Main,ReliabilityMain","TestCategories":"","TEST_END_TIME":"","RestoreName":"","RestoreFromLocation":"\\\\code1.emi.philips.com\\storage\\SDI_Publish\\TestSystems\\Backups"},"repeat":"once","date":"2026-11-15","time":"00:00","zone":"Asia/Kolkata","paused":false,"since":"2026-11-12T09:42:59+00:00","createdBy":"Raja","updatedBy":"Raja","updatedAt":"2026-11-12T09:42:59+00:00"}
+    ]
 
 jobs:
   plan:
