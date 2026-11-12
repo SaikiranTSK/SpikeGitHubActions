@@ -13,8 +13,6 @@ on:
         required: true
         type: string
         default: RestartSidePC
-  schedule:
-    - cron: '48 19 11 11 *'
 
 permissions:
   contents: read
